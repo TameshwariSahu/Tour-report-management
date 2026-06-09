@@ -12,10 +12,23 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5174,http:
   .map((origin) => origin.trim())
   .filter(Boolean);
 const localOrigins = new Set(["http://localhost:5174", "http://127.0.0.1:5174"]);
+const allowedVercelPreviewSuffix = "-tameshwarisahus-projects.vercel.app";
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin) || localOrigins.has(origin)) return true;
+
+  try {
+    const { hostname, protocol } = new URL(origin);
+    return protocol === "https:" && hostname.endsWith(allowedVercelPreviewSuffix);
+  } catch (_) {
+    return false;
+  }
+};
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || localOrigins.has(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));
@@ -50,3 +63,5 @@ server.on("error", (err) => {
 
   console.error("Server failed to start:", err.message);
 });
+
+
