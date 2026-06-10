@@ -318,7 +318,7 @@ export default function AdminDashboard() {
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review tour program reports</p>
           </div>
           <div className="actions">
-            <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true">-&gt;</span> Logout</button>
+            <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
           </div>
         </div>
 
@@ -451,6 +451,7 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
 
 
 

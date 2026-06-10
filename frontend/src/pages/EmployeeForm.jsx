@@ -353,7 +353,7 @@ export default function EmployeeForm() {
             </p>
           </div>
           <div className="actions">
-            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true">-&gt;</span> Logout</button>
+            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
           </div>
         </div>
 
@@ -555,7 +555,9 @@ export default function EmployeeForm() {
                       <option value="No">No</option>
                     </select>
                   </div>
-                  <div>
+                  <div className="grid-note">
+                    If any leaves availed in between write the start date and end date.
+                  </div>                  <div>
                     <label>Leave Start Date</label>
                     <input type="date" value={form.leave_start_date} onChange={(e) => update("leave_start_date", e.target.value)} disabled={locked} />
                   </div>
@@ -647,7 +649,9 @@ export default function EmployeeForm() {
                       <option value="No">No</option>
                     </select>
                   </div>
-                  <div>
+                  <div className="grid-note">
+                    If any leaves availed in between write the start date and end date.
+                  </div>                  <div>
                     <label>Leave Start Date</label>
                     <input type="date" value={form.leave_start_date} onChange={(e) => update("leave_start_date", e.target.value)} disabled={locked} />
                   </div>
@@ -709,6 +713,7 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
 
 
 

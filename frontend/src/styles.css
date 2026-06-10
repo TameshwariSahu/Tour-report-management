@@ -486,3 +486,18 @@ select.db-field:disabled {
 
 
 
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.grid-note {
+  grid-column: 1 / -1;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: -2px 0 0;
+}
