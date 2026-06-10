@@ -60,12 +60,18 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
 
   if (isMedicalTour) {
     const medicalRequiredFields = [
+      ["Referred hospital name", body.referred_hospital_name],
       ["Reference letter no.", body.medical_reference_no],
       ["Reference letter date", body.medical_reference_date],
       ["Return vehicle selection", body.return_vehicle_required],
+      ["Leave availed selection", body.leave_availed],
     ];
     const missingMedical = medicalRequiredFields.find(([, value]) => !String(value || "").trim());
     if (missingMedical) return `${missingMedical[0]} is required.`;
+  }
+
+  if (isMedicalTour && body.leave_availed === "Yes" && !String(body.leave_details || "").trim()) {
+    return "Leave date details are required when leaves are availed.";
   }
 
   if (isEscortDuty) {
@@ -99,5 +105,6 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
 };
 
 module.exports = { normalizeTime, validateSubmittedReport };
+
 
 

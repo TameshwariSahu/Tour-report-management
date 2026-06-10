@@ -33,6 +33,7 @@ const excelDate = (value) => (value ? formatDate(value) : "-");
 
 const medicalSummary = (report) => {
   const details = [];
+  if (report.referred_hospital_name) details.push(`Hospital: ${report.referred_hospital_name}`);
   if (report.medical_reference_no) details.push(`Ref: ${report.medical_reference_no}`);
   if (report.medical_reference_date) details.push(`Ref date: ${formatDate(report.medical_reference_date)}`);
   if (report.patient_name) details.push(`Patient: ${report.patient_name}`);
@@ -40,6 +41,8 @@ const medicalSummary = (report) => {
   if (report.escort_employee_sap_id) details.push(`Escort SAP: ${report.escort_employee_sap_id}`);
   if (report.return_vehicle_required) details.push(`Return vehicle: ${report.return_vehicle_required}`);
   if (report.railway_availability) details.push(`Railway: ${report.railway_availability}`);
+  if (report.leave_availed) details.push(`Leaves availed: ${report.leave_availed}`);
+  if (report.leave_details) details.push(`Leave details: ${report.leave_details}`);
   return details;
 };
 
@@ -52,6 +55,7 @@ const reportToExcelRow = (report) => [
   report.department,
   report.tour_type,
   report.purpose,
+  report.referred_hospital_name || "-",
   report.medical_reference_no || "-",
   excelDate(report.medical_reference_date),
   report.patient_name || "-",
@@ -59,6 +63,8 @@ const reportToExcelRow = (report) => [
   report.escort_employee_sap_id || "-",
   report.return_vehicle_required || "-",
   report.railway_availability || "-",
+  report.leave_availed || "-",
+  report.leave_details || "-",
   excelDate(report.start_date),
   report.start_time || "-",
   report.start_place,
@@ -81,6 +87,7 @@ const excelHeaders = [
   "Department",
   "Type of Tour",
   "Purpose",
+  "Referred Hospital Name",
   "Reference Letter No.",
   "Reference Letter Date",
   "Patient Name",
@@ -88,6 +95,8 @@ const excelHeaders = [
   "Escort Employee SAP ID",
   "Return Vehicle Required",
   "Railway Availability",
+  "Any Leaves Availed",
+  "Leave Date Details",
   "Start Date",
   "Start Time",
   "Started From",
@@ -383,6 +392,7 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
 
 
 

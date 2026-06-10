@@ -474,3 +474,10 @@ select.db-field:disabled {
   opacity: 1;
   font-weight: 700;
 }
+
+.section-hint {
+  margin: -4px 0 14px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}

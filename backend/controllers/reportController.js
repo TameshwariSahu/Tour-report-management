@@ -32,6 +32,7 @@ const reportValues = (body, employee, approvalFile, status) => [
   body.department || employee.department,
   body.tour_type || null,
   body.purpose || null,
+  body.referred_hospital_name || null,
   body.medical_reference_no || null,
   body.medical_reference_date || null,
   body.patient_name || null,
@@ -39,6 +40,8 @@ const reportValues = (body, employee, approvalFile, status) => [
   body.escort_employee_sap_id || null,
   body.return_vehicle_required || null,
   body.railway_availability || null,
+  body.leave_availed || null,
+  body.leave_details || null,
   body.start_date || null,
   normalizeTime(body.start_time, body.start_period),
   body.start_place || null,
@@ -60,6 +63,7 @@ const reportUpdateValues = (body, employee, approvalFile, status, existingReport
   body.department || employee.department,
   body.tour_type || null,
   body.purpose || null,
+  body.referred_hospital_name || null,
   body.medical_reference_no || null,
   body.medical_reference_date || null,
   body.patient_name || null,
@@ -67,6 +71,8 @@ const reportUpdateValues = (body, employee, approvalFile, status, existingReport
   body.escort_employee_sap_id || null,
   body.return_vehicle_required || null,
   body.railway_availability || null,
+  body.leave_availed || null,
+  body.leave_details || null,
   body.start_date || null,
   normalizeTime(body.start_time, body.start_period),
   body.start_place || null,
@@ -109,8 +115,8 @@ const saveExistingReport = ({ req, res, status, employee, existingReport, approv
   db.query(
     `UPDATE tour_reports
      SET name = ?, designation = ?, grade = ?, department = ?, tour_type = ?, purpose = ?,
-         medical_reference_no = ?, medical_reference_date = ?, patient_name = ?, patient_relation = ?,
-         escort_employee_sap_id = ?, return_vehicle_required = ?, railway_availability = ?,
+         referred_hospital_name = ?, medical_reference_no = ?, medical_reference_date = ?, patient_name = ?, patient_relation = ?,
+         escort_employee_sap_id = ?, return_vehicle_required = ?, railway_availability = ?, leave_availed = ?, leave_details = ?,
          start_date = ?, start_time = ?, start_place = ?, end_date = ?, end_time = ?,
          destination = ?, mode_of_travel = ?, weekly_off = ?, approving_authority = ?,
          approval_note_path = ?, approval_note_name = ?, status = ?,
@@ -135,11 +141,11 @@ const createReport = ({ req, res, status, employee, approvalFile, supportFiles }
   db.query(
     `INSERT INTO tour_reports
      (employee_id, sap_id, name, designation, grade, department, tour_type, purpose,
-      medical_reference_no, medical_reference_date, patient_name, patient_relation, escort_employee_sap_id,
-      return_vehicle_required, railway_availability, start_date,
+      referred_hospital_name, medical_reference_no, medical_reference_date, patient_name, patient_relation, escort_employee_sap_id,
+      return_vehicle_required, railway_availability, leave_availed, leave_details, start_date,
       start_time, start_place, end_date, end_time, destination, mode_of_travel, weekly_off,
       approving_authority, approval_note_path, approval_note_name, status, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${status === "Pending" ? "NOW()" : "NULL"})`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${status === "Pending" ? "NOW()" : "NULL"})`,
     reportValues(req.body, employee, approvalFile, status),
     (err, result) => {
       if (err) return res.status(500).json({ message: "Report could not be saved." });
@@ -319,5 +325,6 @@ exports.fileResponse = (req, res) => {
   if (req.query.mode === "download") return res.download(file.value);
   res.sendFile(file.value);
 };
+
 
 

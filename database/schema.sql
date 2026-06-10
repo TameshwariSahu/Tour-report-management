@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS tour_reports (
   department varchar(100) DEFAULT NULL,
   tour_type varchar(50) DEFAULT NULL,
   purpose varchar(255) DEFAULT NULL,
+  referred_hospital_name varchar(150) DEFAULT NULL,
   medical_reference_no varchar(100) DEFAULT NULL,
   medical_reference_date date DEFAULT NULL,
   patient_name varchar(100) DEFAULT NULL,
@@ -77,6 +78,8 @@ CREATE TABLE IF NOT EXISTS tour_reports (
   escort_employee_sap_id varchar(8) DEFAULT NULL,
   return_vehicle_required enum('Yes','No') DEFAULT NULL,
   railway_availability varchar(255) DEFAULT NULL,
+  leave_availed enum('Yes','No') DEFAULT NULL,
+  leave_details varchar(255) DEFAULT NULL,
   start_date date DEFAULT NULL,
   start_time time DEFAULT NULL,
   start_place varchar(150) DEFAULT NULL,
@@ -127,4 +130,5 @@ VALUES ('C & IT'), ('Civil'), ('Electrical'), ('Mechanical'), ('Finance'), ('HR'
 
 INSERT IGNORE INTO master_destinations (destination_name)
 VALUES ('Bangalore'), ('Hyderabad'), ('Delhi'), ('Mumbai'), ('Raipur'), ('Nagpur'), ('Vishakhapatnam'), ('Mysore'), ('Ooty'), ('Goa');
+
 

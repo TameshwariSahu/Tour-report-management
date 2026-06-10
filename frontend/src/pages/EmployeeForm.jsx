@@ -11,6 +11,7 @@ const initialForm = {
   department: "",
   tour_type: "",
   purpose: "",
+  referred_hospital_name: "",
   medical_reference_no: "",
   medical_reference_date: "",
   patient_name: "",
@@ -18,6 +19,8 @@ const initialForm = {
   escort_employee_sap_id: "",
   return_vehicle_required: "",
   railway_availability: "",
+  leave_availed: "",
+  leave_details: "",
   start_date: "",
   start_time: "",
   start_period: "AM",
@@ -130,6 +133,7 @@ export default function EmployeeForm() {
       department: report.department || "",
       tour_type: report.tour_type || "",
       purpose: report.purpose || "",
+      referred_hospital_name: report.referred_hospital_name || "",
       medical_reference_no: report.medical_reference_no || "",
       medical_reference_date: toDateInput(report.medical_reference_date),
       patient_name: report.patient_name || "",
@@ -137,6 +141,8 @@ export default function EmployeeForm() {
       escort_employee_sap_id: report.escort_employee_sap_id || "",
       return_vehicle_required: report.return_vehicle_required || "",
       railway_availability: report.railway_availability || "",
+      leave_availed: report.leave_availed || "",
+      leave_details: report.leave_details || "",
       start_date: toDateInput(report.start_date),
       start_time: toTimeInput(report.start_time),
       start_period: "",
@@ -161,10 +167,13 @@ export default function EmployeeForm() {
         patient_name: value === "Medical (Escort Duty)" ? current.patient_name : "",
         patient_relation: value === "Medical (Escort Duty)" ? current.patient_relation : "",
         escort_employee_sap_id: value === "Medical (Escort Duty)" ? current.escort_employee_sap_id : "",
+        referred_hospital_name: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.referred_hospital_name : "",
         medical_reference_no: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.medical_reference_no : "",
         medical_reference_date: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.medical_reference_date : "",
         return_vehicle_required: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.return_vehicle_required : "",
         railway_availability: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.railway_availability : "",
+        leave_availed: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_availed : "",
+        leave_details: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_details : "",
       }));
       return;
     }
@@ -420,6 +429,7 @@ export default function EmployeeForm() {
             {isMedicalTour && (
               <div className="form-subsection medical-tour-details">
                 <h3>{isEscortDuty ? "Escort Duty Details" : "Self Medical Tour Details"}</h3>
+                {isMedicalSelf && <p className="section-hint">Enter details for self-treatment availed at referred hospital.</p>}
                 <div className="grid">
                   {isEscortDuty && (
                     <>
@@ -443,13 +453,73 @@ export default function EmployeeForm() {
                     </>
                   )}
                   <div>
-                    <label>Reference Letter No. *</label>
+                    <label>Referred Hospital Name *</label>
+                    <input value={form.referred_hospital_name} onChange={(e) => update("referred_hospital_name", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference letter no. *</label>
                     <input value={form.medical_reference_no} onChange={(e) => update("medical_reference_no", e.target.value)} required={isMedicalTour} disabled={locked} />
                   </div>
                   <div>
-                    <label>Reference Letter Date *</label>
+                    <label>Reference letter date *</label>
                     <input type="date" value={form.medical_reference_date} onChange={(e) => update("medical_reference_date", e.target.value)} required={isMedicalTour} disabled={locked} />
                   </div>
+                  <div>
+                    <label>Trip Start Date *</label>
+                    <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip begins at (hh:mm) *</label>
+                    <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip Started from *</label>
+                    <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip End Date *</label>
+                    <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip ends at (hh:mm) *</label>
+                    <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Destination *</label>
+                    <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required={isMedicalTour} disabled={locked} placeholder="Enter destination" />
+                  </div>
+                  <div>
+                    <label>Mode of Travel *</label>
+                    <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isMedicalTour} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                        <option key={mode} value={mode}>{mode}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Weekly off on *</label>
+                    <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required={isMedicalTour} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <option key={day} value={day}>{day}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Any leaves availed in between *</label>
+                    <select value={form.leave_availed} onChange={(e) => update("leave_availed", e.target.value)} required={isMedicalTour} disabled={locked}>
+                      <option value="">Choose</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  {form.leave_availed === "Yes" && (
+                    <div>
+                      <label>If any leaves availed in between, write the start date and end date</label>
+                      <input value={form.leave_details} onChange={(e) => update("leave_details", e.target.value)} disabled={locked} placeholder="Example: 10.06.2026 to 12.06.2026" />
+                    </div>
+                  )}
                   <div>
                     <label>Any return vehicle to be taken? *</label>
                     <select value={form.return_vehicle_required} onChange={(e) => update("return_vehicle_required", e.target.value)} required={isMedicalTour} disabled={locked}>
@@ -465,7 +535,6 @@ export default function EmployeeForm() {
                 </div>
               </div>
             )}
-
             <div className="form-subsection">
               <h3>Route and Travel</h3>
               <div className="grid">
@@ -571,6 +640,7 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
 
 
 
