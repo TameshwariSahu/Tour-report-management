@@ -100,6 +100,7 @@ export default function EmployeeForm() {
   const canSubmit = !activeReport || ["Draft", "Rejected"].includes(activeReport.status);
   const hasExistingApprovalNote = Boolean(activeReport?.approval_note_path);
   const activeOpenReport = reports.find((report) => ["Draft", "Pending", "Rejected"].includes(report.status));
+  const isOfficial = form.tour_type === "Official";
   const isMedicalSelf = form.tour_type === "Medical(Self)";
   const isEscortDuty = form.tour_type === "Medical (Escort Duty)";
   const isMedicalTour = isMedicalSelf || isEscortDuty;
@@ -405,10 +406,12 @@ export default function EmployeeForm() {
             </div>
           </div>
 
-          <div className="section-title">Official Tour Details</div>
+          <div className="section-title">
+            {isMedicalSelf ? "Self Medical Tour Details" : isEscortDuty ? "Escort Duty Details" : "Official Tour Details"}
+          </div>
           <div className="card">
             <div className="form-subsection">
-              <h3>Tour Information</h3>
+              <h3>Tour Type</h3>
               <div className="grid">
                 <div>
                   <label>Type of Tour *</label>
@@ -419,78 +422,45 @@ export default function EmployeeForm() {
                     <option value="Medical (Escort Duty)">Medical (Escort Duty)</option>
                   </select>
                 </div>
-                <div>
-                  <label>Purpose of Official Tour *</label>
-                  <input value={form.purpose} onChange={(e) => update("purpose", e.target.value)} required disabled={locked} />
-                </div>
               </div>
             </div>
 
-            {isMedicalTour && (
-              <div className="form-subsection medical-tour-details">
-                <h3>{isEscortDuty ? "Escort Duty Details" : "Self Medical Tour Details"}</h3>
-                {isMedicalSelf && <p className="section-hint">Enter details for self-treatment availed at referred hospital.</p>}
+            {isOfficial && (
+              <div className="form-subsection">
+                <h3>Official Tour Details</h3>
+                <p className="section-hint">Submit details</p>
                 <div className="grid">
-                  {isEscortDuty && (
-                    <>
-                      <div>
-                        <label>Name of Patient *</label>
-                        <input value={form.patient_name} onChange={(e) => update("patient_name", e.target.value)} required={isEscortDuty} disabled={locked} />
-                      </div>
-                      <div>
-                        <label>Relation with Patient *</label>
-                        <select value={form.patient_relation} onChange={(e) => update("patient_relation", e.target.value)} required={isEscortDuty} disabled={locked}>
-                          <option value="">Choose</option>
-                          {["Self", "Spouse", "Father", "Mother", "Son", "Daughter", "Dependent", "Other"].map((relation) => (
-                            <option key={relation} value={relation}>{relation}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label>Escort Employee SAP ID</label>
-                        <input value={form.escort_employee_sap_id} onChange={(e) => update("escort_employee_sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} disabled={locked} placeholder="8-digit SAP ID" />
-                      </div>
-                    </>
-                  )}
                   <div>
-                    <label>Referred Hospital Name *</label>
-                    <input value={form.referred_hospital_name} onChange={(e) => update("referred_hospital_name", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <label>Purpose of Official Tour *</label>
+                    <input value={form.purpose} onChange={(e) => update("purpose", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
-                    <label>Reference letter no. *</label>
-                    <input value={form.medical_reference_no} onChange={(e) => update("medical_reference_no", e.target.value)} required={isMedicalTour} disabled={locked} />
-                  </div>
-                  <div>
-                    <label>Reference letter date *</label>
-                    <input type="date" value={form.medical_reference_date} onChange={(e) => update("medical_reference_date", e.target.value)} required={isMedicalTour} disabled={locked} />
-                  </div>
-                  <div>
-                    <label>Trip Start Date *</label>
-                    <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <label>Start Date *</label>
+                    <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
                     <label>Trip begins at (hh:mm) *</label>
-                    <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
                     <label>Trip Started from *</label>
-                    <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
-                    <label>Trip End Date *</label>
-                    <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <label>End Date *</label>
+                    <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
                     <label>Trip ends at (hh:mm) *</label>
-                    <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required={isMedicalTour} disabled={locked} />
+                    <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required={isOfficial} disabled={locked} />
                   </div>
                   <div>
                     <label>Destination *</label>
-                    <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required={isMedicalTour} disabled={locked} placeholder="Enter destination" />
+                    <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required={isOfficial} disabled={locked} placeholder="Enter destination" />
                   </div>
                   <div>
                     <label>Mode of Travel *</label>
-                    <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isMedicalTour} disabled={locked}>
+                    <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isOfficial} disabled={locked}>
                       <option value="">Choose</option>
                       {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
                         <option key={mode} value={mode}>{mode}</option>
@@ -499,7 +469,70 @@ export default function EmployeeForm() {
                   </div>
                   <div>
                     <label>Weekly off on *</label>
-                    <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required={isMedicalTour} disabled={locked}>
+                    <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required={isOfficial} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <option key={day} value={day}>{day}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isMedicalSelf && (
+              <div className="form-subsection medical-tour-details">
+                <h3>Self Medical Tour Details</h3>
+                <p className="section-hint">Enter details for self-treatment availed at referred hospital.</p>
+                <div className="grid">
+                  <div>
+                    <label>Referred Hospital Name *</label>
+                    <input value={form.referred_hospital_name} onChange={(e) => update("referred_hospital_name", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference letter no. *</label>
+                    <input value={form.medical_reference_no} onChange={(e) => update("medical_reference_no", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference letter date *</label>
+                    <input type="date" value={form.medical_reference_date} onChange={(e) => update("medical_reference_date", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip Start Date *</label>
+                    <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip begins at (hh:mm) *</label>
+                    <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip Started from *</label>
+                    <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip End Date *</label>
+                    <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip ends at (hh:mm) *</label>
+                    <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required={isMedicalSelf} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Destination *</label>
+                    <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required={isMedicalSelf} disabled={locked} placeholder="Enter destination" />
+                  </div>
+                  <div>
+                    <label>Mode of Travel *</label>
+                    <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isMedicalSelf} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                        <option key={mode} value={mode}>{mode}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Weekly off on *</label>
+                    <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required={isMedicalSelf} disabled={locked}>
                       <option value="">Choose</option>
                       {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
                         <option key={day} value={day}>{day}</option>
@@ -507,8 +540,8 @@ export default function EmployeeForm() {
                     </select>
                   </div>
                   <div>
-                    <label>Any leaves availed in between *</label>
-                    <select value={form.leave_availed} onChange={(e) => update("leave_availed", e.target.value)} required={isMedicalTour} disabled={locked}>
+                    <label>Any leaves availed in between</label>
+                    <select value={form.leave_availed} onChange={(e) => update("leave_availed", e.target.value)} disabled={locked}>
                       <option value="">Choose</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
@@ -516,80 +549,104 @@ export default function EmployeeForm() {
                   </div>
                   {form.leave_availed === "Yes" && (
                     <div>
-                      <label>If any leaves availed in between, write the start date and end date</label>
+                      <label>If any leaves availed in between write the start date (dd.mm.yyyy) and end date (dd.mm.yyyy)</label>
                       <input value={form.leave_details} onChange={(e) => update("leave_details", e.target.value)} disabled={locked} placeholder="Example: 10.06.2026 to 12.06.2026" />
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {isEscortDuty && (
+              <div className="form-subsection medical-tour-details">
+                <h3>Escort Duty Details</h3>
+                <p className="section-hint">Enter details of treatment availed by dependent / employee.</p>
+                <div className="grid">
                   <div>
-                    <label>Any return vehicle to be taken? *</label>
-                    <select value={form.return_vehicle_required} onChange={(e) => update("return_vehicle_required", e.target.value)} required={isMedicalTour} disabled={locked}>
+                    <label>Name of Patient *</label>
+                    <input value={form.patient_name} onChange={(e) => update("patient_name", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Relation with the patient *</label>
+                    <select value={form.patient_relation} onChange={(e) => update("patient_relation", e.target.value)} required={isEscortDuty} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Self", "Spouse", "Father", "Mother", "Son", "Daughter", "Dependent", "Other"].map((relation) => (
+                        <option key={relation} value={relation}>{relation}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>If escorting another employee, please write his/her SAP ID</label>
+                    <input value={form.escort_employee_sap_id} onChange={(e) => update("escort_employee_sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} disabled={locked} placeholder="8-digit SAP ID" />
+                  </div>
+                  <div>
+                    <label>Referred Hospital Name *</label>
+                    <input value={form.referred_hospital_name} onChange={(e) => update("referred_hospital_name", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference letter no. *</label>
+                    <input value={form.medical_reference_no} onChange={(e) => update("medical_reference_no", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference letter date *</label>
+                    <input type="date" value={form.medical_reference_date} onChange={(e) => update("medical_reference_date", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip Start Date *</label>
+                    <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip begins at (hh:mm) *</label>
+                    <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip Started from *</label>
+                    <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip End Date *</label>
+                    <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Trip ends at (hh:mm) *</label>
+                    <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required={isEscortDuty} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Employee's Weekly off on *</label>
+                    <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required={isEscortDuty} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <option key={day} value={day}>{day}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Mode of Travel *</label>
+                    <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isEscortDuty} disabled={locked}>
+                      <option value="">Choose</option>
+                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                        <option key={mode} value={mode}>{mode}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Any leaves availed in between</label>
+                    <select value={form.leave_availed} onChange={(e) => update("leave_availed", e.target.value)} disabled={locked}>
                       <option value="">Choose</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
                     </select>
                   </div>
-                  <div>
-                    <label>If by railway, mention waitlist/available train details</label>
-                    <input value={form.railway_availability} onChange={(e) => update("railway_availability", e.target.value)} disabled={locked} />
-                  </div>
+                  {form.leave_availed === "Yes" && (
+                    <div>
+                      <label>If any leaves availed in between write the start date (dd.mm.yyyy) and end date (dd.mm.yyyy)</label>
+                      <input value={form.leave_details} onChange={(e) => update("leave_details", e.target.value)} disabled={locked} placeholder="Example: 10.06.2026 to 12.06.2026" />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-            <div className="form-subsection">
-              <h3>Route and Travel</h3>
-              <div className="grid">
-                <div>
-                  <label>Trip Started From *</label>
-                  <input value={form.start_place} onChange={(e) => update("start_place", e.target.value)} required disabled={locked} />
-                </div>
-                <div>
-                  <label>Destination *</label>
-                  <input value={form.destination} onChange={(e) => update("destination", e.target.value)} required disabled={locked} placeholder="Enter destination" />
-                </div>
-                <div>
-                  <label>Mode of Travel *</label>
-                  <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required disabled={locked}>
-                    <option value="">Choose</option>
-                    {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
-                      <option key={mode} value={mode}>{mode}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label>Weekly Off On *</label>
-                  <select value={form.weekly_off} onChange={(e) => update("weekly_off", e.target.value)} required disabled={locked}>
-                    <option value="">Choose</option>
-                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                      <option key={day} value={day}>{day}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-subsection">
-              <h3>Trip Schedule</h3>
-              <div className="grid">
-                <div>
-                  <label>Start Date *</label>
-                  <input type="date" value={form.start_date} onChange={(e) => update("start_date", e.target.value)} required disabled={locked} />
-                </div>
-                <div>
-                  <label>Trip begins at</label>
-                  <input type="time" value={form.start_time} onChange={(e) => update("start_time", e.target.value)} required disabled={locked} />
-                </div>
-                <div>
-                  <label>End Date *</label>
-                  <input type="date" value={form.end_date} onChange={(e) => update("end_date", e.target.value)} required disabled={locked} />
-                </div>
-                <div>
-                  <label>Trip ends at</label>
-                  <input type="time" value={form.end_time} onChange={(e) => update("end_time", e.target.value)} required disabled={locked} />
-                </div>
-              </div>
-            </div>
           </div>
-
           <div className="section-title">Approved Tour Program</div>
           <div className="card">
             <div className="grid">
@@ -640,6 +697,7 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
 
 
 
