@@ -43,7 +43,7 @@ const medicalSummary = (report) => {
   if (report.return_vehicle_required) details.push(`Return vehicle: ${report.return_vehicle_required}`);
   if (report.railway_availability) details.push(`Railway: ${report.railway_availability}`);
   if (report.leave_availed) details.push(`Leaves availed: ${report.leave_availed}`);
-  if (report.leave_details) details.push(`Leave details: ${report.leave_details}`);
+  if (report.leave_start_date || report.leave_end_date) details.push(`Leave dates: ${excelDate(report.leave_start_date)} to ${excelDate(report.leave_end_date)}`);
   return details;
 };
 
@@ -91,7 +91,8 @@ const selfMedicalExcelColumns = [
   { group: "Self Medical Tour Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 140 },
   { group: "Self Medical Tour Details", label: "Weekly Off On", value: (report) => report.weekly_off || "-", width: 120 },
   { group: "Self Medical Tour Details", label: "Any Leaves Availed In Between", value: (report) => report.leave_availed || "-", width: 180 },
-  { group: "Self Medical Tour Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 230 },
+  { group: "Self Medical Tour Details", label: "Leave Start Date", value: (report) => excelDate(report.leave_start_date), width: 130 },
+  { group: "Self Medical Tour Details", label: "Leave End Date", value: (report) => excelDate(report.leave_end_date), width: 130 },
   ...approvalExcelColumns,
 ];
 
@@ -112,7 +113,8 @@ const escortDutyExcelColumns = [
   { group: "Escort Duty Details", label: "Employee's Weekly Off On", value: (report) => report.weekly_off || "-", width: 150 },
   { group: "Escort Duty Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 140 },
   { group: "Escort Duty Details", label: "Any Leaves Availed In Between", value: (report) => report.leave_availed || "-", width: 180 },
-  { group: "Escort Duty Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 230 },
+  { group: "Escort Duty Details", label: "Leave Start Date", value: (report) => excelDate(report.leave_start_date), width: 130 },
+  { group: "Escort Duty Details", label: "Leave End Date", value: (report) => excelDate(report.leave_end_date), width: 130 },
   ...approvalExcelColumns,
 ];
 
@@ -449,6 +451,7 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
 
 
 

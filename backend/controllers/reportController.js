@@ -42,6 +42,8 @@ const reportValues = (body, employee, approvalFile, status) => [
   body.railway_availability || null,
   body.leave_availed || null,
   body.leave_details || null,
+  body.leave_start_date || null,
+  body.leave_end_date || null,
   body.start_date || null,
   normalizeTime(body.start_time, body.start_period),
   body.start_place || null,
@@ -73,6 +75,8 @@ const reportUpdateValues = (body, employee, approvalFile, status, existingReport
   body.railway_availability || null,
   body.leave_availed || null,
   body.leave_details || null,
+  body.leave_start_date || null,
+  body.leave_end_date || null,
   body.start_date || null,
   normalizeTime(body.start_time, body.start_period),
   body.start_place || null,
@@ -116,7 +120,7 @@ const saveExistingReport = ({ req, res, status, employee, existingReport, approv
     `UPDATE tour_reports
      SET name = ?, designation = ?, grade = ?, department = ?, tour_type = ?, purpose = ?,
          referred_hospital_name = ?, medical_reference_no = ?, medical_reference_date = ?, patient_name = ?, patient_relation = ?,
-         escort_employee_sap_id = ?, return_vehicle_required = ?, railway_availability = ?, leave_availed = ?, leave_details = ?,
+         escort_employee_sap_id = ?, return_vehicle_required = ?, railway_availability = ?, leave_availed = ?, leave_details = ?, leave_start_date = ?, leave_end_date = ?,
          start_date = ?, start_time = ?, start_place = ?, end_date = ?, end_time = ?,
          destination = ?, mode_of_travel = ?, weekly_off = ?, approving_authority = ?,
          approval_note_path = ?, approval_note_name = ?, status = ?,
@@ -142,10 +146,10 @@ const createReport = ({ req, res, status, employee, approvalFile, supportFiles }
     `INSERT INTO tour_reports
      (employee_id, sap_id, name, designation, grade, department, tour_type, purpose,
       referred_hospital_name, medical_reference_no, medical_reference_date, patient_name, patient_relation, escort_employee_sap_id,
-      return_vehicle_required, railway_availability, leave_availed, leave_details, start_date,
+      return_vehicle_required, railway_availability, leave_availed, leave_details, leave_start_date, leave_end_date, start_date,
       start_time, start_place, end_date, end_time, destination, mode_of_travel, weekly_off,
       approving_authority, approval_note_path, approval_note_name, status, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${status === "Pending" ? "NOW()" : "NULL"})`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${status === "Pending" ? "NOW()" : "NULL"})`,
     reportValues(req.body, employee, approvalFile, status),
     (err, result) => {
       if (err) return res.status(500).json({ message: "Report could not be saved." });
@@ -325,6 +329,7 @@ exports.fileResponse = (req, res) => {
   if (req.query.mode === "download") return res.download(file.value);
   res.sendFile(file.value);
 };
+
 
 
 

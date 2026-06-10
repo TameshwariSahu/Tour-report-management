@@ -92,8 +92,13 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
     }
   }
 
-  if (body.leave_availed === "Yes" && !String(body.leave_details || "").trim()) {
-    return "Leave date details are required when leaves are availed.";
+  if (body.leave_availed === "Yes") {
+    if (!body.leave_start_date || !body.leave_end_date) {
+      return "Leave start date and leave end date are required when leaves are availed.";
+    }
+    if (new Date(body.leave_start_date) > new Date(body.leave_end_date)) {
+      return "Leave end date cannot be before leave start date.";
+    }
   }
 
   if (!hasApprovalNote) return "Approval note is required.";
@@ -115,3 +120,4 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
 };
 
 module.exports = { normalizeTime, validateSubmittedReport };
+

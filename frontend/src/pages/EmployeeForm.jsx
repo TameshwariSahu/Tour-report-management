@@ -23,10 +23,12 @@ const initialForm = {
   railway_availability: "",
   leave_availed: "",
   leave_details: "",
+  leave_start_date: "",
+  leave_end_date: "",
   start_date: "",
   start_time: "",
   start_period: "AM",
-  start_place: "",
+  start_place: "Kirandul",
   end_date: "",
   end_time: "",
   end_period: "AM",
@@ -146,10 +148,12 @@ export default function EmployeeForm() {
       railway_availability: report.railway_availability || "",
       leave_availed: report.leave_availed || "",
       leave_details: report.leave_details || "",
+      leave_start_date: toDateInput(report.leave_start_date),
+      leave_end_date: toDateInput(report.leave_end_date),
       start_date: toDateInput(report.start_date),
       start_time: toTimeInput(report.start_time),
       start_period: "",
-      start_place: report.start_place || "",
+      start_place: report.start_place || "Kirandul",
       end_date: toDateInput(report.end_date),
       end_time: toTimeInput(report.end_time),
       end_period: "",
@@ -177,6 +181,8 @@ export default function EmployeeForm() {
         railway_availability: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.railway_availability : "",
         leave_availed: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_availed : "",
         leave_details: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_details : "",
+        leave_start_date: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_start_date : "",
+        leave_end_date: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.leave_end_date : "",
       }));
       return;
     }
@@ -550,8 +556,12 @@ export default function EmployeeForm() {
                     </select>
                   </div>
                   <div>
-                    <label>If any leaves availed in between write the start date (dd.mm.yyyy) and end date (dd.mm.yyyy)</label>
-                    <input value={form.leave_details} onChange={(e) => update("leave_details", e.target.value)} disabled={locked} placeholder="Example: 10.06.2026 to 12.06.2026" />
+                    <label>Leave Start Date</label>
+                    <input type="date" value={form.leave_start_date} onChange={(e) => update("leave_start_date", e.target.value)} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Leave End Date</label>
+                    <input type="date" value={form.leave_end_date} onChange={(e) => update("leave_end_date", e.target.value)} disabled={locked} />
                   </div>
                 </div>
               </div>
@@ -638,8 +648,12 @@ export default function EmployeeForm() {
                     </select>
                   </div>
                   <div>
-                    <label>If any leaves availed in between write the start date (dd.mm.yyyy) and end date (dd.mm.yyyy)</label>
-                    <input value={form.leave_details} onChange={(e) => update("leave_details", e.target.value)} disabled={locked} placeholder="Example: 10.06.2026 to 12.06.2026" />
+                    <label>Leave Start Date</label>
+                    <input type="date" value={form.leave_start_date} onChange={(e) => update("leave_start_date", e.target.value)} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Leave End Date</label>
+                    <input type="date" value={form.leave_end_date} onChange={(e) => update("leave_end_date", e.target.value)} disabled={locked} />
                   </div>
                 </div>
               </div>
@@ -695,6 +709,7 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
 
 
 

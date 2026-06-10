@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS tour_reports (
   railway_availability varchar(255) DEFAULT NULL,
   leave_availed enum('Yes','No') DEFAULT NULL,
   leave_details varchar(255) DEFAULT NULL,
+  leave_start_date date DEFAULT NULL,
+  leave_end_date date DEFAULT NULL,
   start_date date DEFAULT NULL,
   start_time time DEFAULT NULL,
   start_place varchar(150) DEFAULT NULL,
@@ -130,5 +132,6 @@ VALUES ('C & IT'), ('Civil'), ('Electrical'), ('Mechanical'), ('Finance'), ('HR'
 
 INSERT IGNORE INTO master_destinations (destination_name)
 VALUES ('Bangalore'), ('Hyderabad'), ('Delhi'), ('Mumbai'), ('Raipur'), ('Nagpur'), ('Vishakhapatnam'), ('Mysore'), ('Ooty'), ('Goa');
+
 
 
