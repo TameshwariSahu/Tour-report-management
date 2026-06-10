@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL, employeeAuthHeaders } from "../api";
 import Toast from "../components/Toast";
 
+const officialTravelModes = ["Bus", "Train", "Flight", "Hired Vehicle", "Hired Vehicle + Flight"];
+const medicalTravelModes = ["Bus", "Hired Vehicle", "Other"];
 const initialForm = {
   name: "",
   designation: "",
@@ -462,7 +464,7 @@ export default function EmployeeForm() {
                     <label>Mode of Travel *</label>
                     <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isOfficial} disabled={locked}>
                       <option value="">Choose</option>
-                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                      {officialTravelModes.map((mode) => (
                         <option key={mode} value={mode}>{mode}</option>
                       ))}
                     </select>
@@ -525,7 +527,7 @@ export default function EmployeeForm() {
                     <label>Mode of Travel *</label>
                     <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isMedicalSelf} disabled={locked}>
                       <option value="">Choose</option>
-                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                      {medicalTravelModes.map((mode) => (
                         <option key={mode} value={mode}>{mode}</option>
                       ))}
                     </select>
@@ -622,7 +624,7 @@ export default function EmployeeForm() {
                     <label>Mode of Travel *</label>
                     <select value={form.mode_of_travel} onChange={(e) => update("mode_of_travel", e.target.value)} required={isEscortDuty} disabled={locked}>
                       <option value="">Choose</option>
-                      {["Flight", "Hired Vehicle + Flight", "Hired Vehicle", "Train", "Bus"].map((mode) => (
+                      {medicalTravelModes.map((mode) => (
                         <option key={mode} value={mode}>{mode}</option>
                       ))}
                     </select>
@@ -693,6 +695,7 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
 
 
 
