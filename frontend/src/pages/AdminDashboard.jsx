@@ -46,43 +46,100 @@ const medicalSummary = (report) => {
   return details;
 };
 
-const excelColumns = [
+const employeeExcelColumns = [
   { group: "Employee Details", label: "SAP ID", value: (report) => report.sap_id, width: 90 },
   { group: "Employee Details", label: "Employee Name", value: (report) => report.name, width: 170 },
   { group: "Employee Details", label: "Designation", value: (report) => report.designation, width: 130 },
   { group: "Employee Details", label: "Grade", value: (report) => report.grade, width: 70 },
   { group: "Employee Details", label: "Department", value: (report) => report.department, width: 110 },
-  { group: "Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
-  { group: "Tour Details", label: "Type of Tour", value: (report) => report.tour_type, width: 130 },
-  { group: "Tour Details", label: "Purpose", value: (report) => report.purpose || "-", width: 180 },
-  { group: "Medical / Escort Details", label: "Referred Hospital", value: (report) => report.referred_hospital_name || "-", width: 190 },
-  { group: "Medical / Escort Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
-  { group: "Medical / Escort Details", label: "Reference Letter Date", value: (report) => excelDate(report.medical_reference_date), width: 145 },
-  { group: "Medical / Escort Details", label: "Patient Name", value: (report) => report.patient_name || "-", width: 150 },
-  { group: "Medical / Escort Details", label: "Patient Relation", value: (report) => report.patient_relation || "-", width: 130 },
-  { group: "Medical / Escort Details", label: "Escort SAP ID", value: (report) => report.escort_employee_sap_id || "-", width: 110 },
-  { group: "Medical / Escort Details", label: "Leaves Availed", value: (report) => report.leave_availed || "-", width: 110 },
-  { group: "Medical / Escort Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 220 },
-  { group: "Journey Details", label: "Start Date", value: (report) => excelDate(report.start_date), width: 110 },
-  { group: "Journey Details", label: "Start Time", value: (report) => report.start_time || "-", width: 90 },
-  { group: "Journey Details", label: "Started From", value: (report) => report.start_place || "-", width: 140 },
-  { group: "Journey Details", label: "End Date", value: (report) => excelDate(report.end_date), width: 110 },
-  { group: "Journey Details", label: "End Time", value: (report) => report.end_time || "-", width: 90 },
-  { group: "Journey Details", label: "Destination", value: (report) => report.destination || "-", width: 140 },
-  { group: "Journey Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 150 },
-  { group: "Journey Details", label: "Weekly Off", value: (report) => report.weekly_off || "-", width: 110 },
+];
+
+const approvalExcelColumns = [
   { group: "Approval Details", label: "Approving Authority", value: (report) => report.approving_authority || "-", width: 170 },
   { group: "Approval Details", label: "Status", value: (report) => report.status, width: 100 },
   { group: "Approval Details", label: "Rejection Reason", value: (report) => report.rejection_reason || "-", width: 220 },
 ];
 
-const reportToExcelRow = (report) => excelColumns.map((column) => column.value(report));
+const officialExcelColumns = [
+  ...employeeExcelColumns,
+  { group: "Official Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Official Tour Details", label: "Purpose of Official Tour", value: (report) => report.purpose || "-", width: 190 },
+  { group: "Official Tour Details", label: "Start Date", value: (report) => excelDate(report.start_date), width: 110 },
+  { group: "Official Tour Details", label: "Trip Begins At", value: (report) => report.start_time || "-", width: 100 },
+  { group: "Official Tour Details", label: "Trip Started From", value: (report) => report.start_place || "-", width: 150 },
+  { group: "Official Tour Details", label: "End Date", value: (report) => excelDate(report.end_date), width: 110 },
+  { group: "Official Tour Details", label: "Trip Ends At", value: (report) => report.end_time || "-", width: 100 },
+  { group: "Official Tour Details", label: "Destination", value: (report) => report.destination || "-", width: 150 },
+  { group: "Official Tour Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 150 },
+  { group: "Official Tour Details", label: "Weekly Off On", value: (report) => report.weekly_off || "-", width: 120 },
+  ...approvalExcelColumns,
+];
 
-const excelHeaders = excelColumns.map((column) => column.label);
+const selfMedicalExcelColumns = [
+  ...employeeExcelColumns,
+  { group: "Self Medical Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Self Medical Tour Details", label: "Referred Hospital Name", value: (report) => report.referred_hospital_name || "-", width: 190 },
+  { group: "Self Medical Tour Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
+  { group: "Self Medical Tour Details", label: "Reference Letter Date", value: (report) => excelDate(report.medical_reference_date), width: 150 },
+  { group: "Self Medical Tour Details", label: "Trip Start Date", value: (report) => excelDate(report.start_date), width: 120 },
+  { group: "Self Medical Tour Details", label: "Trip Begins At", value: (report) => report.start_time || "-", width: 100 },
+  { group: "Self Medical Tour Details", label: "Trip Started From", value: (report) => report.start_place || "-", width: 150 },
+  { group: "Self Medical Tour Details", label: "Trip End Date", value: (report) => excelDate(report.end_date), width: 120 },
+  { group: "Self Medical Tour Details", label: "Trip Ends At", value: (report) => report.end_time || "-", width: 100 },
+  { group: "Self Medical Tour Details", label: "Destination", value: (report) => report.destination || "-", width: 150 },
+  { group: "Self Medical Tour Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 140 },
+  { group: "Self Medical Tour Details", label: "Weekly Off On", value: (report) => report.weekly_off || "-", width: 120 },
+  { group: "Self Medical Tour Details", label: "Any Leaves Availed In Between", value: (report) => report.leave_availed || "-", width: 180 },
+  { group: "Self Medical Tour Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 230 },
+  ...approvalExcelColumns,
+];
 
-const excelGroupHeaders = () => {
+const escortDutyExcelColumns = [
+  ...employeeExcelColumns,
+  { group: "Escort Duty Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Escort Duty Details", label: "Name of Patient", value: (report) => report.patient_name || "-", width: 150 },
+  { group: "Escort Duty Details", label: "Relation With Patient", value: (report) => report.patient_relation || "-", width: 150 },
+  { group: "Escort Duty Details", label: "Escort Employee SAP ID", value: (report) => report.escort_employee_sap_id || "-", width: 150 },
+  { group: "Escort Duty Details", label: "Referred Hospital Name", value: (report) => report.referred_hospital_name || "-", width: 190 },
+  { group: "Escort Duty Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
+  { group: "Escort Duty Details", label: "Reference Letter Date", value: (report) => excelDate(report.medical_reference_date), width: 150 },
+  { group: "Escort Duty Details", label: "Trip Start Date", value: (report) => excelDate(report.start_date), width: 120 },
+  { group: "Escort Duty Details", label: "Trip Begins At", value: (report) => report.start_time || "-", width: 100 },
+  { group: "Escort Duty Details", label: "Trip Started From", value: (report) => report.start_place || "-", width: 150 },
+  { group: "Escort Duty Details", label: "Trip End Date", value: (report) => excelDate(report.end_date), width: 120 },
+  { group: "Escort Duty Details", label: "Trip Ends At", value: (report) => report.end_time || "-", width: 100 },
+  { group: "Escort Duty Details", label: "Employee's Weekly Off On", value: (report) => report.weekly_off || "-", width: 150 },
+  { group: "Escort Duty Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 140 },
+  { group: "Escort Duty Details", label: "Any Leaves Availed In Between", value: (report) => report.leave_availed || "-", width: 180 },
+  { group: "Escort Duty Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 230 },
+  ...approvalExcelColumns,
+];
+
+const mixedExcelColumns = [
+  ...employeeExcelColumns,
+  { group: "Report Summary", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Report Summary", label: "Type of Tour", value: (report) => report.tour_type, width: 140 },
+  { group: "Report Summary", label: "Main Purpose / Hospital", value: (report) => report.purpose || report.referred_hospital_name || "-", width: 220 },
+  { group: "Report Summary", label: "Journey", value: (report) => `${excelDate(report.start_date)} ${report.start_time || "-"} to ${excelDate(report.end_date)} ${report.end_time || "-"}`, width: 230 },
+  { group: "Report Summary", label: "Route", value: (report) => `${report.start_place || "-"} to ${report.destination || "-"}`, width: 220 },
+  { group: "Report Summary", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 140 },
+  { group: "Report Summary", label: "Type Specific Details", value: (report) => medicalSummary(report).join(" | ") || "-", width: 320 },
+  ...approvalExcelColumns,
+];
+
+const getExcelColumns = (reportList) => {
+  const types = [...new Set(reportList.map((report) => report.tour_type))];
+  if (types.length === 1 && types[0] === "Official") return officialExcelColumns;
+  if (types.length === 1 && types[0] === "Medical(Self)") return selfMedicalExcelColumns;
+  if (types.length === 1 && types[0] === "Medical (Escort Duty)") return escortDutyExcelColumns;
+  return mixedExcelColumns;
+};
+
+const reportToExcelRow = (report, columns) => columns.map((column) => column.value(report));
+
+const excelGroupHeaders = (columns) => {
   const groups = [];
-  excelColumns.forEach((column) => {
+  columns.forEach((column) => {
     const last = groups[groups.length - 1];
     if (last && last.name === column.group) {
       last.count += 1;
@@ -206,14 +263,16 @@ export default function AdminDashboard() {
       return;
     }
 
-    const groupHeader = `<tr>${excelGroupHeaders().map((group) => (
+    const columns = getExcelColumns(reports);
+    const excelHeaders = columns.map((column) => column.label);
+    const groupHeader = `<tr>${excelGroupHeaders(columns).map((group) => (
       `<th class="group" colspan="${group.count}">${excelValue(group.name)}</th>`
     )).join("")}</tr>`;
     const headerRow = `<tr>${excelHeaders.map((header) => `<th>${excelValue(header)}</th>`).join("")}</tr>`;
     const dataRows = reports.map((report) => (
-      `<tr>${reportToExcelRow(report).map((cell) => `<td>${excelValue(cell)}</td>`).join("")}</tr>`
+      `<tr>${reportToExcelRow(report, columns).map((cell) => `<td>${excelValue(cell)}</td>`).join("")}</tr>`
     )).join("");
-    const colGroup = `<colgroup>${excelColumns.map((column) => `<col style="width:${column.width}px">`).join("")}</colgroup>`;
+    const colGroup = `<colgroup>${columns.map((column) => `<col style="width:${column.width}px">`).join("")}</colgroup>`;
     const workbook = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
@@ -389,6 +448,8 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
+
 
 
 
