@@ -11,6 +11,13 @@ const initialForm = {
   department: "",
   tour_type: "",
   purpose: "",
+  medical_reference_no: "",
+  medical_reference_date: "",
+  patient_name: "",
+  patient_relation: "",
+  escort_employee_sap_id: "",
+  return_vehicle_required: "",
+  railway_availability: "",
   start_date: "",
   start_time: "",
   start_period: "AM",
@@ -90,6 +97,9 @@ export default function EmployeeForm() {
   const canSubmit = !activeReport || ["Draft", "Rejected"].includes(activeReport.status);
   const hasExistingApprovalNote = Boolean(activeReport?.approval_note_path);
   const activeOpenReport = reports.find((report) => ["Draft", "Pending", "Rejected"].includes(report.status));
+  const isMedicalSelf = form.tour_type === "Medical(Self)";
+  const isEscortDuty = form.tour_type === "Medical (Escort Duty)";
+  const isMedicalTour = isMedicalSelf || isEscortDuty;
 
   const latestEditable = useMemo(
     () => reports.find((report) => ["Draft", "Rejected"].includes(report.status)),
@@ -120,6 +130,13 @@ export default function EmployeeForm() {
       department: report.department || "",
       tour_type: report.tour_type || "",
       purpose: report.purpose || "",
+      medical_reference_no: report.medical_reference_no || "",
+      medical_reference_date: toDateInput(report.medical_reference_date),
+      patient_name: report.patient_name || "",
+      patient_relation: report.patient_relation || "",
+      escort_employee_sap_id: report.escort_employee_sap_id || "",
+      return_vehicle_required: report.return_vehicle_required || "",
+      railway_availability: report.railway_availability || "",
       start_date: toDateInput(report.start_date),
       start_time: toTimeInput(report.start_time),
       start_period: "",
@@ -137,6 +154,21 @@ export default function EmployeeForm() {
   };
 
   const update = (field, value) => {
+    if (field === "tour_type") {
+      setForm((current) => ({
+        ...current,
+        tour_type: value,
+        patient_name: value === "Medical (Escort Duty)" ? current.patient_name : "",
+        patient_relation: value === "Medical (Escort Duty)" ? current.patient_relation : "",
+        escort_employee_sap_id: value === "Medical (Escort Duty)" ? current.escort_employee_sap_id : "",
+        medical_reference_no: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.medical_reference_no : "",
+        medical_reference_date: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.medical_reference_date : "",
+        return_vehicle_required: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.return_vehicle_required : "",
+        railway_availability: value === "Medical(Self)" || value === "Medical (Escort Duty)" ? current.railway_availability : "",
+      }));
+      return;
+    }
+
     setForm({ ...form, [field]: value });
   };
 
@@ -303,7 +335,7 @@ export default function EmployeeForm() {
             </p>
           </div>
           <div className="actions">
-            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true">↪</span> Logout</button>
+            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true">-&gt;</span> Logout</button>
           </div>
         </div>
 
@@ -384,6 +416,55 @@ export default function EmployeeForm() {
                 </div>
               </div>
             </div>
+
+            {isMedicalTour && (
+              <div className="form-subsection medical-tour-details">
+                <h3>{isEscortDuty ? "Escort Duty Details" : "Self Medical Tour Details"}</h3>
+                <div className="grid">
+                  {isEscortDuty && (
+                    <>
+                      <div>
+                        <label>Name of Patient *</label>
+                        <input value={form.patient_name} onChange={(e) => update("patient_name", e.target.value)} required={isEscortDuty} disabled={locked} />
+                      </div>
+                      <div>
+                        <label>Relation with Patient *</label>
+                        <select value={form.patient_relation} onChange={(e) => update("patient_relation", e.target.value)} required={isEscortDuty} disabled={locked}>
+                          <option value="">Choose</option>
+                          {["Self", "Spouse", "Father", "Mother", "Son", "Daughter", "Dependent", "Other"].map((relation) => (
+                            <option key={relation} value={relation}>{relation}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Escort Employee SAP ID</label>
+                        <input value={form.escort_employee_sap_id} onChange={(e) => update("escort_employee_sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} disabled={locked} placeholder="8-digit SAP ID" />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label>Reference Letter No. *</label>
+                    <input value={form.medical_reference_no} onChange={(e) => update("medical_reference_no", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Reference Letter Date *</label>
+                    <input type="date" value={form.medical_reference_date} onChange={(e) => update("medical_reference_date", e.target.value)} required={isMedicalTour} disabled={locked} />
+                  </div>
+                  <div>
+                    <label>Any return vehicle to be taken? *</label>
+                    <select value={form.return_vehicle_required} onChange={(e) => update("return_vehicle_required", e.target.value)} required={isMedicalTour} disabled={locked}>
+                      <option value="">Choose</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>If by railway, mention waitlist/available train details</label>
+                    <input value={form.railway_availability} onChange={(e) => update("railway_availability", e.target.value)} disabled={locked} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="form-subsection">
               <h3>Route and Travel</h3>
@@ -490,6 +571,9 @@ export default function EmployeeForm() {
     </main>
   );
 }
+
+
+
 
 
 

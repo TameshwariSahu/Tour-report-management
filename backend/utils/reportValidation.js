@@ -53,6 +53,33 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
 
   const missing = requiredFields.find(([, value]) => !String(value || "").trim());
   if (missing) return `${missing[0]} is required.`;
+
+  const isMedicalSelf = body.tour_type === "Medical(Self)";
+  const isEscortDuty = body.tour_type === "Medical (Escort Duty)";
+  const isMedicalTour = isMedicalSelf || isEscortDuty;
+
+  if (isMedicalTour) {
+    const medicalRequiredFields = [
+      ["Reference letter no.", body.medical_reference_no],
+      ["Reference letter date", body.medical_reference_date],
+      ["Return vehicle selection", body.return_vehicle_required],
+    ];
+    const missingMedical = medicalRequiredFields.find(([, value]) => !String(value || "").trim());
+    if (missingMedical) return `${missingMedical[0]} is required.`;
+  }
+
+  if (isEscortDuty) {
+    const escortRequiredFields = [
+      ["Patient name", body.patient_name],
+      ["Patient relation", body.patient_relation],
+    ];
+    const missingEscort = escortRequiredFields.find(([, value]) => !String(value || "").trim());
+    if (missingEscort) return `${missingEscort[0]} is required.`;
+    if (body.escort_employee_sap_id && !/^\d{8}$/.test(String(body.escort_employee_sap_id))) {
+      return "Escort employee SAP ID must be exactly 8 digits.";
+    }
+  }
+
   if (!hasApprovalNote) return "Approval note is required.";
   if (new Date(body.start_date) > new Date(body.end_date)) return "End date cannot be before start date.";
 
@@ -72,4 +99,5 @@ const validateSubmittedReport = (body, hasApprovalNote) => {
 };
 
 module.exports = { normalizeTime, validateSubmittedReport };
+
 

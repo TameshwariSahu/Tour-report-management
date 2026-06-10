@@ -31,6 +31,18 @@ const excelValue = (value) => String(value ?? "-")
 
 const excelDate = (value) => (value ? formatDate(value) : "-");
 
+const medicalSummary = (report) => {
+  const details = [];
+  if (report.medical_reference_no) details.push(`Ref: ${report.medical_reference_no}`);
+  if (report.medical_reference_date) details.push(`Ref date: ${formatDate(report.medical_reference_date)}`);
+  if (report.patient_name) details.push(`Patient: ${report.patient_name}`);
+  if (report.patient_relation) details.push(`Relation: ${report.patient_relation}`);
+  if (report.escort_employee_sap_id) details.push(`Escort SAP: ${report.escort_employee_sap_id}`);
+  if (report.return_vehicle_required) details.push(`Return vehicle: ${report.return_vehicle_required}`);
+  if (report.railway_availability) details.push(`Railway: ${report.railway_availability}`);
+  return details;
+};
+
 const reportToExcelRow = (report) => [
   excelDate(report.created_at),
   report.sap_id,
@@ -40,6 +52,13 @@ const reportToExcelRow = (report) => [
   report.department,
   report.tour_type,
   report.purpose,
+  report.medical_reference_no || "-",
+  excelDate(report.medical_reference_date),
+  report.patient_name || "-",
+  report.patient_relation || "-",
+  report.escort_employee_sap_id || "-",
+  report.return_vehicle_required || "-",
+  report.railway_availability || "-",
   excelDate(report.start_date),
   report.start_time || "-",
   report.start_place,
@@ -62,6 +81,13 @@ const excelHeaders = [
   "Department",
   "Type of Tour",
   "Purpose",
+  "Reference Letter No.",
+  "Reference Letter Date",
+  "Patient Name",
+  "Patient Relation",
+  "Escort Employee SAP ID",
+  "Return Vehicle Required",
+  "Railway Availability",
   "Start Date",
   "Start Time",
   "Started From",
@@ -224,7 +250,7 @@ export default function AdminDashboard() {
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review tour program reports</p>
           </div>
           <div className="actions">
-            <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true">↪</span> Logout</button>
+            <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true">-&gt;</span> Logout</button>
           </div>
         </div>
 
@@ -289,6 +315,7 @@ export default function AdminDashboard() {
                   </td>
                   <td>
                     <strong>{report.purpose}</strong><br />
+                    {medicalSummary(report).map((item) => (<span key={item}>{item}<br /></span>))}
                     {formatDate(report.start_date)} to {formatDate(report.end_date)}<br />
                     {report.start_place} to {report.destination}
                   </td>
@@ -356,6 +383,8 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
+
 
 
 
