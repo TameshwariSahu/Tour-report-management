@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS tour_report_management;
 USE tour_report_management;
 
-CREATE TABLE IF NOT EXISTS admins (
+CREATE TABLE IF NOT EXISTS users (
   id int NOT NULL AUTO_INCREMENT,
   sap_id varchar(8) NOT NULL UNIQUE,
   password varchar(255) NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS tour_reports (
   KEY employee_id (employee_id),
   KEY approved_by (approved_by),
   CONSTRAINT tour_reports_employee_fk FOREIGN KEY (employee_id) REFERENCES employees(id),
-  CONSTRAINT tour_reports_admin_fk FOREIGN KEY (approved_by) REFERENCES admins(id)
+  CONSTRAINT tour_reports_user_fk FOREIGN KEY (approved_by) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS tour_supporting_documents (
@@ -132,6 +132,7 @@ VALUES ('C & IT'), ('Civil'), ('Electrical'), ('Mechanical'), ('Finance'), ('HR'
 
 INSERT IGNORE INTO master_destinations (destination_name)
 VALUES ('Bangalore'), ('Hyderabad'), ('Delhi'), ('Mumbai'), ('Raipur'), ('Nagpur'), ('Vishakhapatnam'), ('Mysore'), ('Ooty'), ('Goa');
+
 
 
 

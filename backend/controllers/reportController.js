@@ -247,7 +247,7 @@ exports.getReports = (req, res) => {
   const sql = `
     SELECT tr.*, a.sap_id AS approved_by_sap, e.email AS employee_email
     FROM tour_reports tr
-    LEFT JOIN admins a ON tr.approved_by = a.id
+    LEFT JOIN users a ON tr.approved_by = a.id
     LEFT JOIN employees e ON tr.employee_id = e.id
     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
     ORDER BY COALESCE(tr.submitted_at, tr.created_at) DESC, tr.id DESC
@@ -329,6 +329,7 @@ exports.fileResponse = (req, res) => {
   if (req.query.mode === "download") return res.download(file.value);
   res.sendFile(file.value);
 };
+
 
 
 

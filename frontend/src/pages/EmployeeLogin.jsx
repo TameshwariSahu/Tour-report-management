@@ -55,7 +55,7 @@ export default function EmployeeLogin() {
           <p>Enter registered SAP ID and email to continue your tour report.</p>
           <div className="login-switch" aria-label="Login type">
             <button className="active" type="button"><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
-            <button type="button" onClick={() => navigate("/admin")}><span className="ui-icon" aria-hidden="true">A</span> Admin</button>
+            <button type="button" onClick={() => navigate("/admin")}><span className="ui-icon" aria-hidden="true">U</span> User</button>
           </div>
         </div>
 
@@ -81,3 +81,4 @@ export default function EmployeeLogin() {
     </main>
   );
 }
+

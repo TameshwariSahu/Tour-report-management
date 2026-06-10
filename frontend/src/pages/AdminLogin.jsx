@@ -32,7 +32,7 @@ export default function AdminLogin() {
       });
 
       localStorage.setItem("tour_admin_token", res.data.token);
-      localStorage.setItem("tour_admin", JSON.stringify(res.data.admin));
+      localStorage.setItem("tour_admin", JSON.stringify(res.data.user));
       navigate("/admin/dashboard");
     } catch (err) {
       showToast(err.response?.data?.message || "Login failed.", "error");
@@ -48,19 +48,19 @@ export default function AdminLogin() {
         <div className="header">
           <div className="brand-heading">
             <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
-            <h1>Admin Login</h1>
+            <h1>User Login</h1>
           </div>
           <p>Review and approve submitted tour program reports.</p>
           <div className="login-switch" aria-label="Login type">
             <button type="button" onClick={() => navigate("/")}><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
-            <button className="active" type="button"><span className="ui-icon" aria-hidden="true">A</span> Admin</button>
+            <button className="active" type="button"><span className="ui-icon" aria-hidden="true">U</span> User</button>
           </div>
         </div>
 
         <form className="card" onSubmit={submit}>
           <div className="grid">
             <div>
-              <label>Admin SAP ID *</label>
+              <label>User SAP ID *</label>
               <input
                 value={sapId}
                 onChange={(e) => setSapId(e.target.value.replace(/\D/g, "").slice(0, 8))}
@@ -83,6 +83,7 @@ export default function AdminLogin() {
     </main>
   );
 }
+
 
 
 

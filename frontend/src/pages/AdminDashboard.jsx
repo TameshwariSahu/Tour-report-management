@@ -313,7 +313,7 @@ export default function AdminDashboard() {
           <div>
             <div className="brand-heading">
               <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
-              <h1>Admin Dashboard</h1>
+              <h1>User Dashboard</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review tour program reports</p>
           </div>
@@ -451,6 +451,7 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
 
 
 
