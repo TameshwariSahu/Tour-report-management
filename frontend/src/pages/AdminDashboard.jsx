@@ -46,70 +46,52 @@ const medicalSummary = (report) => {
   return details;
 };
 
-const reportToExcelRow = (report) => [
-  excelDate(report.created_at),
-  report.sap_id,
-  report.name,
-  report.designation,
-  report.grade,
-  report.department,
-  report.tour_type,
-  report.purpose,
-  report.referred_hospital_name || "-",
-  report.medical_reference_no || "-",
-  excelDate(report.medical_reference_date),
-  report.patient_name || "-",
-  report.patient_relation || "-",
-  report.escort_employee_sap_id || "-",
-  report.return_vehicle_required || "-",
-  report.railway_availability || "-",
-  report.leave_availed || "-",
-  report.leave_details || "-",
-  excelDate(report.start_date),
-  report.start_time || "-",
-  report.start_place,
-  excelDate(report.end_date),
-  report.end_time || "-",
-  report.destination,
-  report.mode_of_travel,
-  report.weekly_off,
-  report.approving_authority,
-  report.status,
-  report.rejection_reason || "-",
+const excelColumns = [
+  { group: "Employee Details", label: "SAP ID", value: (report) => report.sap_id, width: 90 },
+  { group: "Employee Details", label: "Employee Name", value: (report) => report.name, width: 170 },
+  { group: "Employee Details", label: "Designation", value: (report) => report.designation, width: 130 },
+  { group: "Employee Details", label: "Grade", value: (report) => report.grade, width: 70 },
+  { group: "Employee Details", label: "Department", value: (report) => report.department, width: 110 },
+  { group: "Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Tour Details", label: "Type of Tour", value: (report) => report.tour_type, width: 130 },
+  { group: "Tour Details", label: "Purpose", value: (report) => report.purpose || "-", width: 180 },
+  { group: "Medical / Escort Details", label: "Referred Hospital", value: (report) => report.referred_hospital_name || "-", width: 190 },
+  { group: "Medical / Escort Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
+  { group: "Medical / Escort Details", label: "Reference Letter Date", value: (report) => excelDate(report.medical_reference_date), width: 145 },
+  { group: "Medical / Escort Details", label: "Patient Name", value: (report) => report.patient_name || "-", width: 150 },
+  { group: "Medical / Escort Details", label: "Patient Relation", value: (report) => report.patient_relation || "-", width: 130 },
+  { group: "Medical / Escort Details", label: "Escort SAP ID", value: (report) => report.escort_employee_sap_id || "-", width: 110 },
+  { group: "Medical / Escort Details", label: "Leaves Availed", value: (report) => report.leave_availed || "-", width: 110 },
+  { group: "Medical / Escort Details", label: "Leave Date Details", value: (report) => report.leave_details || "-", width: 220 },
+  { group: "Journey Details", label: "Start Date", value: (report) => excelDate(report.start_date), width: 110 },
+  { group: "Journey Details", label: "Start Time", value: (report) => report.start_time || "-", width: 90 },
+  { group: "Journey Details", label: "Started From", value: (report) => report.start_place || "-", width: 140 },
+  { group: "Journey Details", label: "End Date", value: (report) => excelDate(report.end_date), width: 110 },
+  { group: "Journey Details", label: "End Time", value: (report) => report.end_time || "-", width: 90 },
+  { group: "Journey Details", label: "Destination", value: (report) => report.destination || "-", width: 140 },
+  { group: "Journey Details", label: "Mode of Travel", value: (report) => report.mode_of_travel || "-", width: 150 },
+  { group: "Journey Details", label: "Weekly Off", value: (report) => report.weekly_off || "-", width: 110 },
+  { group: "Approval Details", label: "Approving Authority", value: (report) => report.approving_authority || "-", width: 170 },
+  { group: "Approval Details", label: "Status", value: (report) => report.status, width: 100 },
+  { group: "Approval Details", label: "Rejection Reason", value: (report) => report.rejection_reason || "-", width: 220 },
 ];
 
-const excelHeaders = [
-  "Submitted Date",
-  "SAP ID",
-  "Employee Name",
-  "Designation",
-  "Grade",
-  "Department",
-  "Type of Tour",
-  "Purpose",
-  "Referred Hospital Name",
-  "Reference Letter No.",
-  "Reference Letter Date",
-  "Patient Name",
-  "Patient Relation",
-  "Escort Employee SAP ID",
-  "Return Vehicle Required",
-  "Railway Availability",
-  "Any Leaves Availed",
-  "Leave Date Details",
-  "Start Date",
-  "Start Time",
-  "Started From",
-  "End Date",
-  "End Time",
-  "Destination",
-  "Mode of Travel",
-  "Weekly Off",
-  "Approving Authority",
-  "Status",
-  "Rejection Reason",
-];
+const reportToExcelRow = (report) => excelColumns.map((column) => column.value(report));
 
+const excelHeaders = excelColumns.map((column) => column.label);
+
+const excelGroupHeaders = () => {
+  const groups = [];
+  excelColumns.forEach((column) => {
+    const last = groups[groups.length - 1];
+    if (last && last.name === column.group) {
+      last.count += 1;
+    } else {
+      groups.push({ name: column.group, count: 1 });
+    }
+  });
+  return groups;
+};
 const fileLink = (filePath, label) => (
   <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
     <span>{label}</span>
@@ -224,14 +206,29 @@ export default function AdminDashboard() {
       return;
     }
 
-    const rows = [excelHeaders, ...reports.map(reportToExcelRow)];
-    const tableRows = rows.map((row) => (
-      `<tr>${row.map((cell) => `<td>${excelValue(cell)}</td>`).join("")}</tr>`
+    const groupHeader = `<tr>${excelGroupHeaders().map((group) => (
+      `<th class="group" colspan="${group.count}">${excelValue(group.name)}</th>`
+    )).join("")}</tr>`;
+    const headerRow = `<tr>${excelHeaders.map((header) => `<th>${excelValue(header)}</th>`).join("")}</tr>`;
+    const dataRows = reports.map((report) => (
+      `<tr>${reportToExcelRow(report).map((cell) => `<td>${excelValue(cell)}</td>`).join("")}</tr>`
     )).join("");
+    const colGroup = `<colgroup>${excelColumns.map((column) => `<col style="width:${column.width}px">`).join("")}</colgroup>`;
     const workbook = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="UTF-8"></head>
-        <body><table>${tableRows}</table></body>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: top; white-space: normal; }
+            th { background: #e2e8f0; color: #0f172a; font-weight: 700; text-align: center; }
+            th.group { background: #4f46e5; color: #ffffff; font-size: 13px; }
+            td { color: #1f2937; }
+          </style>
+        </head>
+        <body>
+          <table>${colGroup}<thead>${groupHeader}${headerRow}</thead><tbody>${dataRows}</tbody></table>
+        </body>
       </html>
     `;
     const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
@@ -392,6 +389,8 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
+
 
 
 
