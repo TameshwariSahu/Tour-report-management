@@ -30,6 +30,7 @@ const excelValue = (value) => String(value ?? "-")
   .replace(/"/g, "&quot;");
 
 const excelDate = (value) => (value ? formatDate(value) : "-");
+const reportDate = (report) => report.submitted_at || report.created_at;
 
 const medicalSummary = (report) => {
   const details = [];
@@ -62,7 +63,7 @@ const approvalExcelColumns = [
 
 const officialExcelColumns = [
   ...employeeExcelColumns,
-  { group: "Official Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Official Tour Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Official Tour Details", label: "Purpose of Official Tour", value: (report) => report.purpose || "-", width: 190 },
   { group: "Official Tour Details", label: "Start Date", value: (report) => excelDate(report.start_date), width: 110 },
   { group: "Official Tour Details", label: "Trip Begins At", value: (report) => report.start_time || "-", width: 100 },
@@ -77,7 +78,7 @@ const officialExcelColumns = [
 
 const selfMedicalExcelColumns = [
   ...employeeExcelColumns,
-  { group: "Self Medical Tour Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Self Medical Tour Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Self Medical Tour Details", label: "Referred Hospital Name", value: (report) => report.referred_hospital_name || "-", width: 190 },
   { group: "Self Medical Tour Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
   { group: "Self Medical Tour Details", label: "Reference Letter Date", value: (report) => excelDate(report.medical_reference_date), width: 150 },
@@ -96,7 +97,7 @@ const selfMedicalExcelColumns = [
 
 const escortDutyExcelColumns = [
   ...employeeExcelColumns,
-  { group: "Escort Duty Details", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Escort Duty Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Escort Duty Details", label: "Name of Patient", value: (report) => report.patient_name || "-", width: 150 },
   { group: "Escort Duty Details", label: "Relation With Patient", value: (report) => report.patient_relation || "-", width: 150 },
   { group: "Escort Duty Details", label: "Escort Employee SAP ID", value: (report) => report.escort_employee_sap_id || "-", width: 150 },
@@ -117,7 +118,7 @@ const escortDutyExcelColumns = [
 
 const mixedExcelColumns = [
   ...employeeExcelColumns,
-  { group: "Report Summary", label: "Submitted Date", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Report Summary", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Report Summary", label: "Type of Tour", value: (report) => report.tour_type, width: 140 },
   { group: "Report Summary", label: "Main Purpose / Hospital", value: (report) => report.purpose || report.referred_hospital_name || "-", width: 220 },
   { group: "Report Summary", label: "Journey", value: (report) => `${excelDate(report.start_date)} ${report.start_time || "-"} to ${excelDate(report.end_date)} ${report.end_time || "-"}`, width: 230 },
@@ -371,7 +372,7 @@ export default function AdminDashboard() {
                 <tr><td colSpan="8">No reports found.</td></tr>
               ) : visibleReports.map((report) => (
                 <tr key={report.id}>
-                  <td>{formatDate(report.created_at)}</td>
+                  <td>{formatDate(reportDate(report))}</td>
                   <td>
                     <strong>{report.name}</strong><br />
                     SAP: {report.sap_id}<br />
@@ -448,6 +449,7 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
 
 
 
