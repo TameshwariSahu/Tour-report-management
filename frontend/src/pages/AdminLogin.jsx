@@ -7,6 +7,7 @@ import Toast from "../components/Toast";
 export default function AdminLogin() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("admin");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function AdminLogin() {
       const res = await axios.post(`${API_BASE_URL}/api/admin/login`, {
         user_id: userId,
         password,
+        role,
       });
 
       if (res.data.user.role === "department") {
@@ -66,7 +68,7 @@ export default function AdminLogin() {
             <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
             <h1>User Login</h1>
           </div>
-          <p>Review and approve submitted tour program reports.</p>
+          <p>{role === "department" ? "Submit tour program reports for your department." : "Review and approve submitted tour program reports."}</p>
           <div className="login-switch" aria-label="Login type">
             <button type="button" onClick={() => navigate("/")}><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
             <button className="active" type="button"><span className="ui-icon" aria-hidden="true">U</span> User</button>
@@ -74,6 +76,10 @@ export default function AdminLogin() {
         </div>
 
         <form className="card" onSubmit={submit}>
+          <div className="login-switch" aria-label="User role" style={{ marginBottom: 16 }}>
+            <button className={role === "admin" ? "active" : ""} type="button" onClick={() => setRole("admin")}><span className="ui-icon" aria-hidden="true">A</span> Admin</button>
+            <button className={role === "department" ? "active" : ""} type="button" onClick={() => setRole("department")}><span className="ui-icon" aria-hidden="true">D</span> Department</button>
+          </div>
           <div className="grid">
             <div>
               <label>User ID *</label>
