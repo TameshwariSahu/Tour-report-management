@@ -7,6 +7,7 @@ import Toast from "../components/Toast";
 const officialTravelModes = ["Bus", "Train", "Flight", "Hired Vehicle", "Hired Vehicle + Flight"];
 const medicalTravelModes = ["Bus", "Hired Vehicle", "Other"];
 const initialForm = {
+  sap_id: "",
   name: "",
   designation: "",
   grade: "",
@@ -142,6 +143,7 @@ export default function EmployeeForm() {
   const fillFromReport = (report) => {
     setActiveReport(report);
     setForm({
+      sap_id: report.sap_id || "",
       name: report.name || "",
       designation: report.designation || "",
       grade: report.grade || "",
@@ -254,6 +256,11 @@ export default function EmployeeForm() {
   }, [latestEditable, activeReport, isDepartmentAccess]);
 
   const validateBeforeSubmit = () => {
+    if (isDepartmentAccess && !/^\d{8}$/.test(form.sap_id)) {
+      showToast("SAP ID must be exactly 8 digits.", "error");
+      return false;
+    }
+
     if (form.start_date && form.end_date && new Date(form.start_date) > new Date(form.end_date)) {
       showToast("End date cannot be before start date.", "error");
       return false;
@@ -393,7 +400,7 @@ export default function EmployeeForm() {
             <div className="grid">
               <div>
                 <label>SAP ID</label>
-                <input className="db-field" value={isDepartmentAccess ? "" : employee?.sap_id || ""} disabled />
+                <input className={isDepartmentAccess ? "" : "db-field"} value={isDepartmentAccess ? form.sap_id || "" : employee?.sap_id || ""} onChange={(e) => update("sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} required={isDepartmentAccess} disabled={!isDepartmentAccess} />
               </div>
               <div>
                 <label>Name *</label>

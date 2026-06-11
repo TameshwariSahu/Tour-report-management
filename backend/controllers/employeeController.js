@@ -36,6 +36,7 @@ const createDepartmentToken = (department) =>
       id: null,
       department_login_id: department.id,
       sap_id: department.sap_id,
+      department: department.department_name,
       role: "employee",
       access_type: "department",
     },

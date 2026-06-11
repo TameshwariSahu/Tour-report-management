@@ -23,13 +23,17 @@ const finishReportSave = (reportId, res, message = "Report saved successfully.")
   queueCombinedReportPdf(reportId);
 };
 
+const isDepartmentAccess = (employee) => employee?.access_type === "department";
+const reportSapId = (body, employee) => (isDepartmentAccess(employee) ? body.sap_id : employee.sap_id);
+const reportDepartment = (body, employee) => body.department || employee.department || null;
+
 const reportValues = (body, employee, approvalFile, status) => [
   employee.id || null,
-  employee.sap_id,
+  reportSapId(body, employee),
   body.name || employee.name || null,
   body.designation || employee.designation || null,
   body.grade || employee.grade || null,
-  body.department || employee.department || null,
+  reportDepartment(body, employee),
   body.tour_type || null,
   body.purpose || null,
   body.referred_hospital_name || null,
@@ -59,10 +63,11 @@ const reportValues = (body, employee, approvalFile, status) => [
 ];
 
 const reportUpdateValues = (body, employee, approvalFile, status, existingReport) => [
+  reportSapId(body, employee),
   body.name || employee.name || null,
   body.designation || employee.designation || null,
   body.grade || employee.grade || null,
-  body.department || employee.department || null,
+  reportDepartment(body, employee),
   body.tour_type || null,
   body.purpose || null,
   body.referred_hospital_name || null,
@@ -90,7 +95,7 @@ const reportUpdateValues = (body, employee, approvalFile, status, existingReport
   approvalFile.fileName,
   status,
   existingReport.id,
-  employee.sap_id,
+  isDepartmentAccess(employee) ? employee.department : employee.sap_id,
 ];
 
 const saveReportDocuments = (reportId, supportFiles, res, done) => {
@@ -118,7 +123,7 @@ const saveExistingReport = ({ req, res, status, employee, existingReport, approv
 
   db.query(
     `UPDATE tour_reports
-     SET name = ?, designation = ?, grade = ?, department = ?, tour_type = ?, purpose = ?,
+     SET sap_id = ?, name = ?, designation = ?, grade = ?, department = ?, tour_type = ?, purpose = ?,
          referred_hospital_name = ?, medical_reference_no = ?, medical_reference_date = ?, patient_name = ?, patient_relation = ?,
          escort_employee_sap_id = ?, return_vehicle_required = ?, railway_availability = ?, leave_availed = ?, leave_details = ?, leave_start_date = ?, leave_end_date = ?,
          start_date = ?, start_time = ?, start_place = ?, end_date = ?, end_time = ?,
@@ -127,7 +132,7 @@ const saveExistingReport = ({ req, res, status, employee, existingReport, approv
          combined_pdf_path = NULL, combined_pdf_name = NULL,
          submitted_at = ${status === "Pending" ? "NOW()" : "submitted_at"},
          rejection_reason = ${status === "Pending" ? "NULL" : "rejection_reason"}
-     WHERE id = ? AND sap_id = ?`,
+     WHERE id = ? AND ${isDepartmentAccess(employee) ? "department = ?" : "sap_id = ?"}`,
     reportUpdateValues(req.body, employee, finalApprovalFile, status, existingReport),
     (err) => {
       if (err) return res.status(500).json({ message: "Report could not be saved." });
@@ -160,7 +165,9 @@ const createReport = ({ req, res, status, employee, approvalFile, supportFiles }
 
 const loadOrCreateReport = (req, res, status, employee, approvalFile, supportFiles) => {
   if (req.params.id) {
-    db.query("SELECT * FROM tour_reports WHERE id = ? AND sap_id = ?", [req.params.id, employee.sap_id], (err, rows) => {
+    const ownerSql = isDepartmentAccess(employee) ? "department = ?" : "sap_id = ?";
+    const ownerValue = isDepartmentAccess(employee) ? employee.department : employee.sap_id;
+    db.query(`SELECT * FROM tour_reports WHERE id = ? AND ${ownerSql}`, [req.params.id, ownerValue], (err, rows) => {
       if (err) return res.status(500).json({ message: "Report could not be loaded." });
       if (rows.length === 0) return res.status(404).json({ message: "Report not found." });
       saveExistingReport({ req, res, status, employee, existingReport: rows[0], approvalFile, supportFiles });
@@ -168,9 +175,12 @@ const loadOrCreateReport = (req, res, status, employee, approvalFile, supportFil
     return;
   }
 
+  const pendingOwnerSql = isDepartmentAccess(employee) ? "department = ? AND sap_id = ?" : "sap_id = ?";
+  const pendingOwnerParams = isDepartmentAccess(employee) ? [employee.department, req.body.sap_id] : [employee.sap_id];
+
   db.query(
-    "SELECT id, status FROM tour_reports WHERE sap_id = ? AND status IN ('Draft', 'Pending', 'Rejected') ORDER BY id DESC LIMIT 1",
-    [employee.sap_id],
+    `SELECT id, status FROM tour_reports WHERE ${pendingOwnerSql} AND status IN ('Draft', 'Pending', 'Rejected') ORDER BY id DESC LIMIT 1`,
+    pendingOwnerParams,
     (err, rows) => {
       if (err) return res.status(500).json({ message: "Report could not be checked." });
       if (rows.length > 0) {
@@ -197,6 +207,10 @@ const saveEmployeeReport = async (req, res, status) => {
     return res.status(400).json({ message: `Only ${MAX_SUPPORTING_DOCUMENTS} supporting documents are allowed.` });
   }
 
+  if (isDepartmentAccess(req.employee) && !/^\d{8}$/.test(String(req.body.sap_id || ""))) {
+    return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+  }
+
   try {
     const approvalFile = approvalNote ? await saveUploadedFile(approvalNote, "approval-note") : null;
     const supportFiles = await Promise.all(supportingDocuments.map((file) => saveUploadedFile(file, "support")));
@@ -211,7 +225,12 @@ exports.saveDraft = (req, res) => saveEmployeeReport(req, res, "Draft");
 exports.submitReport = (req, res) => saveEmployeeReport(req, res, "Pending");
 
 exports.getEmployeeReports = (req, res) => {
-  db.query("SELECT * FROM tour_reports WHERE sap_id = ? ORDER BY created_at DESC, id DESC", [req.employee.sap_id], (err, reports) => {
+  const sql = isDepartmentAccess(req.employee)
+    ? "SELECT * FROM tour_reports WHERE department = ? ORDER BY created_at DESC, id DESC"
+    : "SELECT * FROM tour_reports WHERE sap_id = ? ORDER BY created_at DESC, id DESC";
+  const params = [isDepartmentAccess(req.employee) ? req.employee.department : req.employee.sap_id];
+
+  db.query(sql, params, (err, reports) => {
     if (err) return res.status(500).json({ message: "Reports could not be loaded." });
     attachSupportDocs(reports, res);
   });
