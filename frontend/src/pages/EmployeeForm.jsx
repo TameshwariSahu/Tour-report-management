@@ -366,7 +366,7 @@ export default function EmployeeForm() {
               <h1>Tour Program Details</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>
-              {employee ? `${isDepartmentAccess ? "Department form" : employee.name} | SAP ${employee.sap_id}` : "Employee form"}
+              {employee ? (isDepartmentAccess ? `Department form | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Employee form"}
             </p>
           </div>
           <div className="actions">

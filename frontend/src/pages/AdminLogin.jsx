@@ -5,7 +5,7 @@ import { API_BASE_URL } from "../api";
 import Toast from "../components/Toast";
 
 export default function AdminLogin() {
-  const [sapId, setSapId] = useState("");
+  const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
@@ -19,15 +19,15 @@ export default function AdminLogin() {
   const submit = async (e) => {
     e.preventDefault();
 
-    if (sapId.length !== 8) {
-      showToast("SAP ID must be exactly 8 digits.", "error");
+    if (!/^[A-Za-z0-9]{4,20}$/.test(userId)) {
+      showToast("User ID must be 4-20 letters/numbers.", "error");
       return;
     }
 
     try {
       setLoading(true);
       const res = await axios.post(`${API_BASE_URL}/api/admin/login`, {
-        sap_id: sapId,
+        user_id: userId,
         password,
       });
 
@@ -61,11 +61,12 @@ export default function AdminLogin() {
         <form className="card" onSubmit={submit}>
           <div className="grid">
             <div>
-              <label>User SAP ID *</label>
+              <label>User ID *</label>
               <input
-                value={sapId}
-                onChange={(e) => setSapId(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                placeholder="8-digit SAP ID"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20))}
+                placeholder="User ID"
+                autoComplete="username"
                 required
               />
             </div>

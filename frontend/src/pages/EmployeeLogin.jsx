@@ -5,7 +5,7 @@ import { API_BASE_URL } from "../api";
 import Toast from "../components/Toast";
 
 export default function EmployeeLogin() {
-  const [form, setForm] = useState({ sap_id: "", email: "", password: "", otp: "", access_type: "employee" });
+  const [form, setForm] = useState({ sap_id: "", user_id: "", email: "", password: "", otp: "", access_type: "employee" });
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
@@ -21,6 +21,10 @@ export default function EmployeeLogin() {
     if (field === "sap_id") {
       setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 8), otp: "" });
       setOtpSent(false);
+      return;
+    }
+    if (field === "user_id") {
+      setForm({ ...form, [field]: value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20) });
       return;
     }
     if (field === "otp") {
@@ -85,8 +89,8 @@ export default function EmployeeLogin() {
   };
 
   const departmentLogin = async () => {
-    if (form.sap_id.length !== 8) {
-      showToast("SAP ID must be exactly 8 digits.", "error");
+    if (!/^[A-Za-z0-9]{4,20}$/.test(form.user_id)) {
+      showToast("User ID must be 4-20 letters/numbers.", "error");
       return;
     }
     if (!form.password) {
@@ -97,7 +101,7 @@ export default function EmployeeLogin() {
     try {
       setLoading(true);
       const res = await axios.post(`${API_BASE_URL}/api/employee/department-login`, {
-        sap_id: form.sap_id,
+        user_id: form.user_id,
         password: form.password,
       });
       localStorage.setItem("tour_employee_token", res.data.token);
@@ -132,7 +136,7 @@ export default function EmployeeLogin() {
             <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
             <h1>{form.access_type === "department" ? "Department Login" : "Employee Login"}</h1>
           </div>
-          <p>{form.access_type === "department" ? "Enter department SAP ID and password to open a department form." : "Enter registered SAP ID and email to continue your tour report."}</p>
+          <p>{form.access_type === "department" ? "Enter department User ID and password to open a department form." : "Enter registered SAP ID and email to continue your tour report."}</p>
           <div className="login-switch" aria-label="Login type">
             <button className={form.access_type === "employee" ? "active" : ""} type="button" onClick={() => update("access_type", "employee")}><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
             <button className={form.access_type === "department" ? "active" : ""} type="button" onClick={() => update("access_type", "department")}><span className="ui-icon" aria-hidden="true">D</span> Department</button>
@@ -143,8 +147,8 @@ export default function EmployeeLogin() {
         <form className="card" onSubmit={login}>
           <div className="grid">
             <div>
-              <label>SAP ID *</label>
-              <input value={form.sap_id} onChange={(e) => update("sap_id", e.target.value)} autoComplete="username" required placeholder="8-digit SAP ID" />
+              <label>{form.access_type === "department" ? "User ID *" : "SAP ID *"}</label>
+              <input value={form.access_type === "department" ? form.user_id : form.sap_id} onChange={(e) => update(form.access_type === "department" ? "user_id" : "sap_id", e.target.value)} autoComplete="username" required placeholder={form.access_type === "department" ? "User ID" : "8-digit SAP ID"} />
             </div>
             {form.access_type === "department" ? (
               <div>

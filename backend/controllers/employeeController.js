@@ -6,6 +6,7 @@ const { emailShell, sendMail } = require("../utils/mailer");
 
 const isEightDigitSap = (value) => /^\d{8}$/.test(String(value || ""));
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
+const isUserId = (value) => /^[A-Za-z0-9]{4,20}$/.test(String(value || ""));
 
 const employeePayload = (employee, accessType = "employee") => ({
   id: employee.id,
@@ -35,7 +36,7 @@ const createDepartmentToken = (department) =>
     {
       id: null,
       department_login_id: department.id,
-      sap_id: department.sap_id,
+      user_id: department.user_id,
       department: department.department_name,
       role: "employee",
       access_type: "department",
@@ -47,7 +48,7 @@ const createDepartmentToken = (department) =>
 const departmentPayload = (department) => ({
   id: null,
   department_login_id: department.id,
-  sap_id: department.sap_id,
+  user_id: department.user_id,
   name: "",
   email: "",
   designation: "",
@@ -165,10 +166,10 @@ exports.verifyOtp = (req, res) => {
 exports.login = exports.verifyOtp;
 
 exports.departmentLogin = (req, res) => {
-  const { sap_id, password } = req.body;
+  const { user_id, password } = req.body;
 
-  if (!isEightDigitSap(sap_id)) {
-    return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+  if (!isUserId(user_id)) {
+    return res.status(400).json({ message: "User ID must be 4-20 letters/numbers." });
   }
 
   if (!password) {
@@ -176,8 +177,8 @@ exports.departmentLogin = (req, res) => {
   }
 
   db.query(
-    "SELECT * FROM department_logins WHERE sap_id = ? AND status = 'active'",
-    [sap_id],
+    "SELECT * FROM users WHERE user_id = ? AND role = 'department' AND status = 'active'",
+    [user_id],
     (err, rows) => {
       if (err) {
         console.error("Department login lookup failed:", err.message);

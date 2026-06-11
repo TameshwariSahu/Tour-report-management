@@ -264,7 +264,7 @@ exports.getReports = (req, res) => {
   }
 
   const sql = `
-    SELECT tr.*, a.sap_id AS approved_by_sap, e.email AS employee_email
+    SELECT tr.*, a.user_id AS approved_by_user_id, e.email AS employee_email
     FROM tour_reports tr
     LEFT JOIN users a ON tr.approved_by = a.id
     LEFT JOIN employees e ON tr.employee_id = e.id
