@@ -304,7 +304,7 @@ const sendStatusEmail = (reportId, status) => {
   db.query(
     `SELECT tr.*, e.email
      FROM tour_reports tr
-     LEFT JOIN employees e ON tr.employee_id = e.id
+     LEFT JOIN employees e ON tr.sap_id = e.sap_id
      WHERE tr.id = ?`,
     [reportId],
     async (err, rows) => {
