@@ -1,5 +1,10 @@
 const nodemailer = require("nodemailer");
 
+const hasResendConfig = () =>
+  process.env.RESEND_API_KEY &&
+  !String(process.env.RESEND_API_KEY).includes("your_") &&
+  !String(process.env.RESEND_API_KEY).includes("paste_");
+
 const hasSmtpConfig = () =>
   process.env.SMTP_HOST &&
   process.env.SMTP_PORT &&
@@ -9,9 +14,33 @@ const hasSmtpConfig = () =>
   !String(process.env.SMTP_PASS).includes("your_app_password");
 
 const formatSender = () => {
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
   if (!from) return undefined;
   return from.includes("<") ? from : `"Tour Report Management" <${from}>`;
+};
+
+const sendWithResend = async ({ to, subject, text, html }) => {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: formatSender(),
+      to,
+      subject,
+      text,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Resend email failed: ${response.status} ${errorText}`);
+  }
+
+  return true;
 };
 
 const emailShell = ({ title, preview, children }) => `
@@ -33,6 +62,10 @@ const emailShell = ({ title, preview, children }) => `
 `;
 
 const sendMail = async ({ to, subject, text, html }) => {
+  if (hasResendConfig()) {
+    return sendWithResend({ to, subject, text, html });
+  }
+
   if (!hasSmtpConfig()) {
     console.log("[email skipped]", { to, subject, text });
     return false;

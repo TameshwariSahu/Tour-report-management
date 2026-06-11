@@ -314,8 +314,8 @@ const sendStatusEmail = (reportId, status) => {
             `,
           }),
         });
-      } catch {
-        console.log("[email failed] status notification", { reportId, status });
+      } catch (mailErr) {
+        console.log("[email failed] status notification", { reportId, status, error: mailErr.message });
       }
     }
   );
