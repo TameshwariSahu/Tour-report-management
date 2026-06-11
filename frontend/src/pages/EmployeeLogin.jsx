@@ -5,7 +5,8 @@ import { API_BASE_URL } from "../api";
 import Toast from "../components/Toast";
 
 export default function EmployeeLogin() {
-  const [form, setForm] = useState({ sap_id: "", email: "", access_type: "employee" });
+  const [form, setForm] = useState({ sap_id: "", email: "", otp: "", access_type: "employee" });
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
@@ -17,14 +18,24 @@ export default function EmployeeLogin() {
 
   const update = (field, value) => {
     if (field === "sap_id") {
-      setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 8) });
+      setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 8), otp: "" });
+      setOtpSent(false);
+      return;
+    }
+    if (field === "otp") {
+      setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 6) });
+      return;
+    }
+    if (field === "email" || field === "access_type") {
+      setForm({ ...form, [field]: value, otp: "" });
+      setOtpSent(false);
       return;
     }
     setForm({ ...form, [field]: value });
   };
 
-  const login = async (e) => {
-    e.preventDefault();
+  const requestOtp = async (e) => {
+    e?.preventDefault();
     if (form.sap_id.length !== 8) {
       showToast("SAP ID must be exactly 8 digits.", "error");
       return;
@@ -32,7 +43,29 @@ export default function EmployeeLogin() {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/api/employee/login`, form);
+      await axios.post(`${API_BASE_URL}/api/employee/request-otp`, {
+        sap_id: form.sap_id,
+        email: form.email,
+        access_type: form.access_type,
+      });
+      setOtpSent(true);
+      showToast("OTP sent to registered email.");
+    } catch (err) {
+      showToast(err.response?.data?.message || "OTP could not be sent.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (form.otp.length !== 6) {
+      showToast("Please enter the 6-digit OTP.", "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_BASE_URL}/api/employee/verify-otp`, form);
       localStorage.setItem("tour_employee_token", res.data.token);
       localStorage.setItem("tour_employee", JSON.stringify(res.data.employee));
       navigate("/form");
@@ -41,6 +74,15 @@ export default function EmployeeLogin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const login = async (e) => {
+    e.preventDefault();
+    if (otpSent) {
+      await verifyOtp();
+      return;
+    }
+    await requestOtp();
   };
 
   return (
@@ -70,12 +112,23 @@ export default function EmployeeLogin() {
               <label>Email *</label>
               <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required placeholder="registered email" />
             </div>
+            {otpSent && (
+              <div>
+                <label>OTP *</label>
+                <input value={form.otp} onChange={(e) => update("otp", e.target.value)} autoComplete="one-time-code" required placeholder="6-digit OTP" />
+              </div>
+            )}
           </div>
 
           <div className="actions" style={{ marginTop: 16 }}>
             <button className="btn btn-primary" disabled={loading} type="submit">
-              {loading ? "Please wait..." : "Sign In"}
+              {loading ? "Please wait..." : otpSent ? "Verify & Sign In" : "Send OTP"}
             </button>
+            {otpSent && (
+              <button className="btn btn-muted" disabled={loading} type="button" onClick={requestOtp}>
+                Resend OTP
+              </button>
+            )}
           </div>
         </form>
       </div>
