@@ -23,6 +23,18 @@ CREATE TABLE IF NOT EXISTS employees (
   KEY status (status)
 );
 
+CREATE TABLE IF NOT EXISTS department_logins (
+  id int NOT NULL AUTO_INCREMENT,
+  sap_id varchar(8) NOT NULL UNIQUE,
+  password varchar(255) NOT NULL,
+  department_name varchar(100) NOT NULL,
+  status enum('active','inactive') NOT NULL DEFAULT 'active',
+  created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY department_name (department_name),
+  KEY status (status)
+);
+
 CREATE TABLE IF NOT EXISTS employee_otps (
   id int NOT NULL AUTO_INCREMENT,
   employee_id int NOT NULL,

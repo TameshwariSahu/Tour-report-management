@@ -124,6 +124,7 @@ export default function EmployeeForm() {
     if (data?.access_type === "department") {
       setForm((current) => ({
         ...initialForm,
+        department: data.department || "",
         tour_type: current.tour_type,
       }));
       return;
@@ -413,7 +414,7 @@ export default function EmployeeForm() {
               </div>
               <div>
                 <label>Department *</label>
-                <select className={isDepartmentAccess ? "" : "db-field"} value={form.department} onChange={(e) => update("department", e.target.value)} required disabled={!isDepartmentAccess}>
+                <select className="db-field" value={form.department} onChange={(e) => update("department", e.target.value)} required disabled>
                   <option value="">Choose</option>
                   {masters.departments.map((department) => (
                     <option key={department.id} value={department.department_name}>{department.department_name}</option>

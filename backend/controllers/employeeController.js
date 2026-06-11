@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const db = require("../config/db");
 const { emailShell, sendMail } = require("../utils/mailer");
 
@@ -28,6 +29,31 @@ const createToken = (employee) =>
     process.env.JWT_SECRET,
     { expiresIn: "8h" }
   );
+
+const createDepartmentToken = (department) =>
+  jwt.sign(
+    {
+      id: null,
+      department_login_id: department.id,
+      sap_id: department.sap_id,
+      role: "employee",
+      access_type: "department",
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "8h" }
+  );
+
+const departmentPayload = (department) => ({
+  id: null,
+  department_login_id: department.id,
+  sap_id: department.sap_id,
+  name: "",
+  email: "",
+  designation: "",
+  grade: "",
+  department: department.department_name,
+  access_type: "department",
+});
 
 const findEmployee = ({ sap_id, email }, callback) => {
   if (!isEightDigitSap(sap_id)) {
@@ -136,4 +162,45 @@ exports.verifyOtp = (req, res) => {
 };
 
 exports.login = exports.verifyOtp;
+
+exports.departmentLogin = (req, res) => {
+  const { sap_id, password } = req.body;
+
+  if (!isEightDigitSap(sap_id)) {
+    return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+  }
+
+  if (!password) {
+    return res.status(400).json({ message: "Password is required." });
+  }
+
+  db.query(
+    "SELECT * FROM department_logins WHERE sap_id = ? AND status = 'active'",
+    [sap_id],
+    (err, rows) => {
+      if (err) {
+        console.error("Department login lookup failed:", err.message);
+        return res.status(500).json({ message: "Department login failed." });
+      }
+
+      if (rows.length === 0) {
+        return res.status(401).json({ message: "Invalid department credentials." });
+      }
+
+      const department = rows[0];
+      const stored = department.password || "";
+      const isHash = stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$");
+      const valid = isHash ? bcrypt.compareSync(password, stored) : stored === password;
+
+      if (!valid) {
+        return res.status(401).json({ message: "Invalid department credentials." });
+      }
+
+      res.json({
+        token: createDepartmentToken(department),
+        employee: departmentPayload(department),
+      });
+    }
+  );
+};
 

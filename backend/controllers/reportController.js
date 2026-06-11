@@ -24,12 +24,12 @@ const finishReportSave = (reportId, res, message = "Report saved successfully.")
 };
 
 const reportValues = (body, employee, approvalFile, status) => [
-  employee.id,
+  employee.id || null,
   employee.sap_id,
-  body.name || employee.name,
-  body.designation || employee.designation,
-  body.grade || employee.grade,
-  body.department || employee.department,
+  body.name || employee.name || null,
+  body.designation || employee.designation || null,
+  body.grade || employee.grade || null,
+  body.department || employee.department || null,
   body.tour_type || null,
   body.purpose || null,
   body.referred_hospital_name || null,
@@ -59,10 +59,10 @@ const reportValues = (body, employee, approvalFile, status) => [
 ];
 
 const reportUpdateValues = (body, employee, approvalFile, status, existingReport) => [
-  body.name || employee.name,
-  body.designation || employee.designation,
-  body.grade || employee.grade,
-  body.department || employee.department,
+  body.name || employee.name || null,
+  body.designation || employee.designation || null,
+  body.grade || employee.grade || null,
+  body.department || employee.department || null,
   body.tour_type || null,
   body.purpose || null,
   body.referred_hospital_name || null,
@@ -90,7 +90,7 @@ const reportUpdateValues = (body, employee, approvalFile, status, existingReport
   approvalFile.fileName,
   status,
   existingReport.id,
-  employee.id,
+  employee.sap_id,
 ];
 
 const saveReportDocuments = (reportId, supportFiles, res, done) => {
@@ -127,7 +127,7 @@ const saveExistingReport = ({ req, res, status, employee, existingReport, approv
          combined_pdf_path = NULL, combined_pdf_name = NULL,
          submitted_at = ${status === "Pending" ? "NOW()" : "submitted_at"},
          rejection_reason = ${status === "Pending" ? "NULL" : "rejection_reason"}
-     WHERE id = ? AND employee_id = ?`,
+     WHERE id = ? AND sap_id = ?`,
     reportUpdateValues(req.body, employee, finalApprovalFile, status, existingReport),
     (err) => {
       if (err) return res.status(500).json({ message: "Report could not be saved." });
@@ -160,7 +160,7 @@ const createReport = ({ req, res, status, employee, approvalFile, supportFiles }
 
 const loadOrCreateReport = (req, res, status, employee, approvalFile, supportFiles) => {
   if (req.params.id) {
-    db.query("SELECT * FROM tour_reports WHERE id = ? AND employee_id = ?", [req.params.id, employee.id], (err, rows) => {
+    db.query("SELECT * FROM tour_reports WHERE id = ? AND sap_id = ?", [req.params.id, employee.sap_id], (err, rows) => {
       if (err) return res.status(500).json({ message: "Report could not be loaded." });
       if (rows.length === 0) return res.status(404).json({ message: "Report not found." });
       saveExistingReport({ req, res, status, employee, existingReport: rows[0], approvalFile, supportFiles });
@@ -169,8 +169,8 @@ const loadOrCreateReport = (req, res, status, employee, approvalFile, supportFil
   }
 
   db.query(
-    "SELECT id, status FROM tour_reports WHERE employee_id = ? AND status IN ('Draft', 'Pending', 'Rejected') ORDER BY id DESC LIMIT 1",
-    [employee.id],
+    "SELECT id, status FROM tour_reports WHERE sap_id = ? AND status IN ('Draft', 'Pending', 'Rejected') ORDER BY id DESC LIMIT 1",
+    [employee.sap_id],
     (err, rows) => {
       if (err) return res.status(500).json({ message: "Report could not be checked." });
       if (rows.length > 0) {
@@ -211,7 +211,7 @@ exports.saveDraft = (req, res) => saveEmployeeReport(req, res, "Draft");
 exports.submitReport = (req, res) => saveEmployeeReport(req, res, "Pending");
 
 exports.getEmployeeReports = (req, res) => {
-  db.query("SELECT * FROM tour_reports WHERE employee_id = ? ORDER BY created_at DESC, id DESC", [req.employee.id], (err, reports) => {
+  db.query("SELECT * FROM tour_reports WHERE sap_id = ? ORDER BY created_at DESC, id DESC", [req.employee.sap_id], (err, reports) => {
     if (err) return res.status(500).json({ message: "Reports could not be loaded." });
     attachSupportDocs(reports, res);
   });
