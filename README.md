@@ -1,27 +1,35 @@
 # Tour Report Management System
 
-A simple web app for submitting tour program details and approving them from an admin dashboard.
+A web app for submitting tour program details, department-submitted tour forms, document uploads, and approval/rejection from a user dashboard.
 
 ## Flow
 
-- Employee opens the public tour form.
-- Employee enters registered SAP ID and email.
-- OTP is sent to the registered email.
-- Employee verifies OTP, fills the tour form, and can save incomplete work as draft.
-- Employee can edit draft or rejected reports.
-- Approved reports are locked from editing.
+- Login screen has two main options: Employee and User.
+- Employee login uses registered SAP ID, email, and OTP.
+- User login uses alphanumeric User ID and password.
+- User role controls access:
+  - `admin` opens the approval dashboard.
+  - `department` opens the department tour form.
+- Employee can fill their own tour form and save incomplete work as draft.
+- Department users can fill a blank form on behalf of an employee/person.
+- Department field is set from the department user record and remains locked.
+- SAP ID is editable in department form and must be 8 digits.
+- Draft and rejected reports can be edited.
+- Pending and approved reports are locked from editing.
 - Grade, department, and destination are loaded from master tables to keep form data consistent.
 - Data is stored in MySQL.
-- Admin logs in using 8-digit SAP ID and password.
-- Admin can filter reports by year, date range, and status.
-- Admin can preview/download uploaded PDF/image files.
-- Admin can approve or reject reports with a reason.
+- Admin users can filter reports by year, date range, and status.
+- Admin users can preview/download uploaded PDF/image files.
+- Admin users can export filtered reports to Excel.
+- Admin users can approve or reject reports with a reason.
+- Approval/rejection email is sent to the employee email found by report SAP ID.
+- Resend is used for OTP and status emails when configured.
 
 ## Tables
 
 | Table | Purpose |
 |---|---|
-| `admins` | Stores admin SAP ID and password. |
+| `users` | Stores common user logins with `user_id`, password, role, department name, and status. Used for admin and department login. |
 | `employees` | Stores allowed employee SAP ID, email, name, grade, department, and active/inactive status. |
 | `employee_otps` | Stores OTP codes, expiry time, and usage status for employee login. |
 | `master_grades` | Stores grade options used in the employee form. |
@@ -29,6 +37,33 @@ A simple web app for submitting tour program details and approving them from an 
 | `master_destinations` | Stores destination options used in the employee form. |
 | `tour_reports` | Stores employee form details, tour details, approval note, and approval status. |
 | `tour_supporting_documents` | Stores multiple supporting documents for a tour report. |
+
+## Login Types
+
+| Login | Credentials | Access |
+|---|---|---|
+| Employee | SAP ID + email + OTP | Employee tour form with employee details loaded from `employees`. |
+| User - Admin | User ID + password, `role = admin` | Approval dashboard. |
+| User - Department | User ID + password, `role = department` | Department form with department locked from `users.department_name`. |
+
+User IDs are alphanumeric and should be 4-20 characters.
+
+## Form Rules
+
+- Official tour, medical self, and escort duty show their own relevant fields.
+- If `Any leaves availed in between` is `Yes`, leave start date and leave end date are mandatory.
+- Leave end date cannot be before leave start date.
+- Approved reports cannot be edited.
+- Pending reports cannot be edited until admin action is taken.
+- Department-created reports send approval/rejection email only if the entered SAP ID exists in `employees` with a valid email.
+
+## Upload Rules
+
+- Allowed file types: PDF, JPG/JPEG, PNG.
+- Approval note: 1 file required for submission.
+- Supporting documents: up to 3 files.
+- PDF max size: 3 MB.
+- JPG/PNG max size: 1 MB.
 
 ## Local Setup
 
@@ -62,3 +97,38 @@ INSERT INTO employees
 VALUES
 ('87654321', 'Tannu Sahu', 'tannu@example.com', 'Engineer', 'RS8', 'C & IT');
 ```
+
+Add admin and department users:
+
+```sql
+INSERT INTO users
+(user_id, password, role, department_name, status)
+VALUES
+('ADMIN001', 'Admin@123', 'admin', NULL, 'active'),
+('DEPTCIT01', 'Dept@123', 'department', 'C & IT', 'active');
+```
+
+Plain passwords work for testing, but hashed passwords are recommended for real use.
+
+## Email Setup
+
+Add these keys in backend `.env` locally and Render environment variables in production:
+
+```env
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM=Tour Report Management <onboarding@resend.dev>
+```
+
+Email is used for:
+
+- Employee OTP login.
+- Approval notification.
+- Rejection notification with reason.
+
+## Deployment Notes
+
+- Backend can be deployed on Render.
+- Frontend can be deployed on Vercel.
+- After backend changes, redeploy Render.
+- After frontend changes, redeploy Vercel.
+- Do not push `.env` to GitHub.
