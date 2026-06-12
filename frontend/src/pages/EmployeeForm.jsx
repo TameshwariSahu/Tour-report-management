@@ -314,6 +314,21 @@ export default function EmployeeForm() {
     return data;
   };
 
+  const clearForm = () => {
+    if (locked) return;
+
+    setForm({
+      ...initialForm,
+      name: isDepartmentAccess ? "" : employee?.name || "",
+      designation: isDepartmentAccess ? "" : employee?.designation || "",
+      grade: isDepartmentAccess ? "" : employee?.grade || "",
+      department: employee?.department || "",
+    });
+    setApprovalNote(null);
+    setSupportingDocs([]);
+    showToast("Form cleared.");
+  };
+
   const saveDraft = async () => {
     if (locked) return;
 
@@ -714,6 +729,7 @@ export default function EmployeeForm() {
           </div>
 
           <div className="actions">
+            <button className="btn btn-muted" disabled={loading || locked} type="button" onClick={clearForm}>Clear Form</button>
             <button className="btn btn-muted" disabled={loading || locked} type="button" onClick={saveDraft}>Save Draft</button>
             <button className="btn btn-primary" disabled={loading || !canSubmit} type="submit">
               {loading ? "Saving..." : activeReport?.status === "Rejected" ? "Resubmit" : "Submit"}
