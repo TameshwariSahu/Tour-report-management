@@ -2,7 +2,6 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const db = require("../config/db");
-const { cloudinary, hasCloudinaryConfig } = require("../config/cloudinary");
 const { createCombinedPdf } = require("./pdfBuilder");
 
 const MAX_SUPPORTING_DOCUMENTS = 3;
@@ -12,8 +11,6 @@ const MAX_FILE_SIZE = MAX_PDF_SIZE;
 const UPLOAD_RELATIVE_DIR = "uploads/tour-reports";
 const uploadDir = path.join(__dirname, "..", UPLOAD_RELATIVE_DIR);
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
-
-const resourceTypeFor = (mimeType) => (mimeType === "application/pdf" ? "raw" : "image");
 
 const maxSizeFor = (mimeType) => (mimeType === "application/pdf" ? MAX_PDF_SIZE : MAX_IMAGE_SIZE);
 const fileSizeMessage = "PDF must be 3 MB or less. JPG/PNG images must be 1 MB or less.";
@@ -34,50 +31,13 @@ const localFileRecord = (file, prefix) => {
   };
 };
 
-const uploadBufferToCloudinary = (file, prefix) => new Promise((resolve, reject) => {
-  const publicId = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const stream = cloudinary.uploader.upload_stream(
-    {
-      folder: "tour-report-management",
-      public_id: publicId,
-      resource_type: resourceTypeFor(file.mimetype),
-      use_filename: true,
-    },
-    (err, result) => {
-      if (err) return reject(err);
-      resolve({
-        fileName: file.originalname,
-        fileType: file.mimetype,
-        filePath: result.secure_url,
-      });
-    }
-  );
-  stream.end(file.buffer);
-});
-
 const saveUploadedFile = async (file, prefix) => {
   if (!file?.buffer || !file?.originalname || !file?.mimetype) throw new Error("Invalid file upload.");
   if (!allowedTypes.has(file.mimetype)) throw new Error("Only PDF, JPG, and PNG files are allowed.");
   if (file.size > maxSizeFor(file.mimetype)) throw new Error(fileSizeMessage);
 
-  if (!hasCloudinaryConfig()) return localFileRecord(file, prefix);
-  return uploadBufferToCloudinary(file, prefix);
+  return localFileRecord(file, prefix);
 };
-
-const uploadFilePathToCloudinary = (absolutePath, fileName) => new Promise((resolve, reject) => {
-  cloudinary.uploader.upload(
-    absolutePath,
-    {
-      folder: "tour-report-management",
-      public_id: path.parse(fileName).name,
-      resource_type: "raw",
-    },
-    (err, result) => {
-      if (err) return reject(err);
-      resolve(result.secure_url);
-    }
-  );
-});
 
 const attachSupportDocs = (reports, res) => {
   const ids = reports.map((report) => report.id);
@@ -135,15 +95,8 @@ const filePathForMerge = async (filePath, index) => {
 
 const saveCombinedPdf = async (reportId, absoluteFiles) => {
   const fileName = `combined-report-${reportId}-${Date.now()}.pdf`;
-  const localOutput = await createCombinedPdf({ files: absoluteFiles, outputDir: uploadDir, outputName: fileName });
-
-  if (!hasCloudinaryConfig()) {
-    return { filePath: `${UPLOAD_RELATIVE_DIR}/${fileName}`, fileName };
-  }
-
-  const cloudUrl = await uploadFilePathToCloudinary(localOutput, fileName);
-  fs.rmSync(localOutput, { force: true });
-  return { filePath: cloudUrl, fileName };
+  await createCombinedPdf({ files: absoluteFiles, outputDir: uploadDir, outputName: fileName });
+  return { filePath: `${UPLOAD_RELATIVE_DIR}/${fileName}`, fileName };
 };
 
 const generateCombinedReportPdf = (reportId, done) => {

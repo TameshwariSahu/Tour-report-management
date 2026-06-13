@@ -43,11 +43,10 @@ services:
       SMTP_USER: ${SMTP_USER:-yourgmail@gmail.com}
       SMTP_PASS: ${SMTP_PASS:-your_gmail_app_password}
       SMTP_FROM: ${SMTP_FROM:-Tour Report Management <yourgmail@gmail.com>}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
     ports:
       - "5001:5001"
+    volumes:
+      - tour_report_uploads:/app/uploads
 
   frontend:
     build:
@@ -63,3 +62,4 @@ services:
 
 volumes:
   tour_report_mysql_data:
+  tour_report_uploads:

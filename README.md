@@ -64,6 +64,8 @@ User IDs are alphanumeric and should be 4-20 characters.
 - Supporting documents: up to 3 files.
 - PDF max size: 3 MB.
 - JPG/PNG max size: 1 MB.
+- Uploaded files and merged PDFs are stored on the backend server under `uploads/tour-reports`.
+- Docker keeps uploaded files in the `tour_report_uploads` volume so files remain available after container restart.
 
 ## Local Setup
 
@@ -121,6 +123,7 @@ Docker Compose starts:
 | MySQL | `localhost:3307` |
 
 The backend connects to MySQL using `DB_HOST=mysql` inside Docker. This is correct because containers communicate by service name, not by `localhost`.
+Uploaded files are stored in a Docker volume named `tour_report_uploads`.
 
 Stop containers:
 
@@ -128,13 +131,13 @@ Stop containers:
 docker compose down
 ```
 
-Remove containers and database volume:
+Remove containers, database volume, and uploaded file volume:
 
 ```bash
 docker compose down -v
 ```
 
-Use `-v` carefully because it deletes Docker MySQL data.
+Use `-v` carefully because it deletes Docker MySQL data and uploaded files.
 
 Add an employee before testing employee OTP login:
 
