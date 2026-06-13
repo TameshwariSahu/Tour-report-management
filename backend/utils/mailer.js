@@ -13,8 +13,13 @@ const hasSmtpConfig = () =>
   !String(process.env.SMTP_USER).includes("your_email") &&
   !String(process.env.SMTP_PASS).includes("your_app_password");
 
-const formatSender = () => {
-  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+const getEmailProvider = () => String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
+
+const formatSender = (provider) => {
+  const from =
+    provider === "smtp"
+      ? process.env.SMTP_FROM || process.env.SMTP_USER
+      : process.env.RESEND_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
   if (!from) return undefined;
   return from.includes("<") ? from : `"Tour Report Management" <${from}>`;
 };
@@ -27,7 +32,7 @@ const sendWithResend = async ({ to, subject, text, html }) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: formatSender(),
+      from: formatSender("resend"),
       to,
       subject,
       text,
@@ -61,13 +66,9 @@ const emailShell = ({ title, preview, children }) => `
   </div>
 `;
 
-const sendMail = async ({ to, subject, text, html }) => {
-  if (hasResendConfig()) {
-    return sendWithResend({ to, subject, text, html });
-  }
-
+const sendWithSmtp = async ({ to, subject, text, html }) => {
   if (!hasSmtpConfig()) {
-    console.log("[email skipped]", { to, subject, text });
+    console.log("[email skipped] SMTP is not configured", { to, subject, text });
     return false;
   }
 
@@ -75,6 +76,9 @@ const sendMail = async ({ to, subject, text, html }) => {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
     secure: process.env.SMTP_SECURE === "true",
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -82,7 +86,7 @@ const sendMail = async ({ to, subject, text, html }) => {
   });
 
   await transporter.sendMail({
-    from: formatSender(),
+    from: formatSender("smtp"),
     to,
     subject,
     text,
@@ -90,6 +94,33 @@ const sendMail = async ({ to, subject, text, html }) => {
   });
 
   return true;
+};
+
+const sendMail = async ({ to, subject, text, html }) => {
+  const provider = getEmailProvider();
+
+  if (provider === "smtp") {
+    return sendWithSmtp({ to, subject, text, html });
+  }
+
+  if (provider === "resend") {
+    if (!hasResendConfig()) {
+      console.log("[email skipped] Resend is not configured", { to, subject, text });
+      return false;
+    }
+    return sendWithResend({ to, subject, text, html });
+  }
+
+  if (hasSmtpConfig()) {
+    return sendWithSmtp({ to, subject, text, html });
+  }
+
+  if (hasResendConfig()) {
+    return sendWithResend({ to, subject, text, html });
+  }
+
+  console.log("[email skipped]", { to, subject, text });
+  return false;
 };
 
 module.exports = { emailShell, sendMail };

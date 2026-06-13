@@ -23,7 +23,7 @@ A web app for submitting tour program details, department-submitted tour forms, 
 - Admin users can export filtered reports to Excel.
 - Admin users can approve or reject reports with a reason.
 - Approval/rejection email is sent to the employee email found by report SAP ID.
-- Resend is used for OTP and status emails when configured.
+- Email can use Gmail SMTP locally or Resend in production, based on environment variables.
 
 ## Tables
 
@@ -112,9 +112,33 @@ Plain passwords work for testing, but hashed passwords are recommended for real 
 
 ## Email Setup
 
-Add these keys in backend `.env` locally and Render environment variables in production:
+For local Gmail SMTP testing, add these keys in backend `.env`:
 
 ```env
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=your_16_digit_google_app_password
+SMTP_FROM=Tour Report Management <yourgmail@gmail.com>
+```
+
+Gmail SMTP needs 2-Step Verification enabled and an App Password. Use the App Password in `SMTP_PASS`, not the normal Gmail password.
+
+For port `587`, use:
+
+```env
+SMTP_PORT=587
+SMTP_SECURE=false
+```
+
+If `EMAIL_PROVIDER=smtp` is set, the backend sends email through SMTP even when Resend keys are also present.
+
+For Resend, add these keys in backend `.env` locally and Render environment variables in production:
+
+```env
+EMAIL_PROVIDER=resend
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM=Tour Report Management <onboarding@resend.dev>
 ```
