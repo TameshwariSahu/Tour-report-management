@@ -7,6 +7,9 @@ const { emailShell, sendMail } = require("../utils/mailer");
 const isEightDigitSap = (value) => /^\d{8}$/.test(String(value || ""));
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 const isUserId = (value) => /^[A-Za-z0-9]{4,20}$/.test(String(value || ""));
+const OTP_RESEND_COOLDOWN_SECONDS = 60;
+const OTP_WINDOW_MINUTES = 10;
+const OTP_MAX_REQUESTS_PER_WINDOW = 5;
 
 const employeePayload = (employee, accessType = "employee") => ({
   id: employee.id,
@@ -88,46 +91,84 @@ const findEmployee = ({ sap_id, email }, callback) => {
   );
 };
 
+const createAndSendOtp = (employee, accessType, res) => {
+  const otp = String(crypto.randomInt(100000, 1000000));
+
+  db.query(
+    "INSERT INTO employee_otps (employee_id, otp_code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
+    [employee.id, otp],
+    async (err) => {
+      if (err) {
+        console.error("OTP save failed:", err.message);
+        return res.status(500).json({ message: "OTP could not be created." });
+      }
+
+      try {
+        const sent = await sendMail({
+          to: employee.email,
+          subject: "Tour Report Login OTP",
+          text: `Your Tour Report Management OTP is ${otp}. It is valid for 10 minutes.`,
+          html: emailShell({
+            title: "Login OTP",
+            preview: `Hello ${employee.name}, use this OTP to continue your tour report login.`,
+            children: `
+              <p style="margin:0 0 14px;color:#172033;font-size:15px;line-height:1.6;">Use the OTP below to continue as <strong>${accessType === "department" ? "Department" : "Employee"}</strong>.</p>
+              <div style="font-size:28px;letter-spacing:8px;font-weight:800;color:#5b4ce6;background:#eef2ff;border-radius:10px;padding:16px 18px;text-align:center;">${otp}</div>
+              <p style="margin:14px 0 0;color:#64748b;font-size:13px;line-height:1.5;">This OTP is valid for 10 minutes.</p>
+            `,
+          }),
+        });
+
+        if (!sent) throw new Error("Email service is not configured.");
+        res.json({ message: "OTP sent to registered email.", retry_after: OTP_RESEND_COOLDOWN_SECONDS });
+      } catch (mailErr) {
+        console.error("OTP email failed:", mailErr.message);
+        res.status(500).json({ message: "OTP email could not be sent." });
+      }
+    }
+  );
+};
+
 exports.requestOtp = (req, res) => {
   const { sap_id, email, access_type } = req.body;
 
   findEmployee({ sap_id, email }, (lookupErr, employee) => {
     if (lookupErr) return res.status(lookupErr.status).json({ message: lookupErr.message });
-
-    const otp = String(crypto.randomInt(100000, 1000000));
     const accessType = access_type === "department" ? "department" : "employee";
 
     db.query(
-      "INSERT INTO employee_otps (employee_id, otp_code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))",
-      [employee.id, otp],
-      async (err) => {
-        if (err) {
-          console.error("OTP save failed:", err.message);
-          return res.status(500).json({ message: "OTP could not be created." });
+      `SELECT
+         COUNT(*) AS recent_count,
+         COALESCE(TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()), ?) AS seconds_since_last
+       FROM employee_otps
+       WHERE employee_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)`,
+      [OTP_RESEND_COOLDOWN_SECONDS + 1, employee.id, OTP_WINDOW_MINUTES],
+      (limitErr, limitRows) => {
+        if (limitErr) {
+          console.error("OTP rate limit check failed:", limitErr.message);
+          return res.status(500).json({ message: "OTP request could not be checked." });
         }
 
-        try {
-          const sent = await sendMail({
-            to: employee.email,
-            subject: "Tour Report Login OTP",
-            text: `Your Tour Report Management OTP is ${otp}. It is valid for 10 minutes.`,
-            html: emailShell({
-              title: "Login OTP",
-              preview: `Hello ${employee.name}, use this OTP to continue your tour report login.`,
-              children: `
-                <p style="margin:0 0 14px;color:#172033;font-size:15px;line-height:1.6;">Use the OTP below to continue as <strong>${accessType === "department" ? "Department" : "Employee"}</strong>.</p>
-                <div style="font-size:28px;letter-spacing:8px;font-weight:800;color:#5b4ce6;background:#eef2ff;border-radius:10px;padding:16px 18px;text-align:center;">${otp}</div>
-                <p style="margin:14px 0 0;color:#64748b;font-size:13px;line-height:1.5;">This OTP is valid for 10 minutes.</p>
-              `,
-            }),
+        const limit = limitRows[0] || {};
+        const recentCount = Number(limit.recent_count || 0);
+        const secondsSinceLast = Number(limit.seconds_since_last || OTP_RESEND_COOLDOWN_SECONDS + 1);
+
+        if (secondsSinceLast < OTP_RESEND_COOLDOWN_SECONDS) {
+          const retryAfter = OTP_RESEND_COOLDOWN_SECONDS - secondsSinceLast;
+          return res.status(429).json({
+            message: `Please wait ${retryAfter} seconds before requesting another OTP.`,
+            retry_after: retryAfter,
           });
-
-          if (!sent) throw new Error("Email service is not configured.");
-          res.json({ message: "OTP sent to registered email." });
-        } catch (mailErr) {
-          console.error("OTP email failed:", mailErr.message);
-          res.status(500).json({ message: "OTP email could not be sent." });
         }
+
+        if (recentCount >= OTP_MAX_REQUESTS_PER_WINDOW) {
+          return res.status(429).json({
+            message: `Too many OTP requests. Please try again after ${OTP_WINDOW_MINUTES} minutes.`,
+            retry_after: OTP_WINDOW_MINUTES * 60,
+          });
+        }
+
+        createAndSendOtp(employee, accessType, res);
       }
     );
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api";
@@ -7,6 +7,7 @@ import Toast from "../components/Toast";
 export default function EmployeeLogin() {
   const [form, setForm] = useState({ sap_id: "", email: "", otp: "", access_type: "employee" });
   const [otpSent, setOtpSent] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
@@ -16,10 +17,17 @@ export default function EmployeeLogin() {
     window.setTimeout(() => setToast({ message: "", type }), 3500);
   };
 
+  useEffect(() => {
+    if (resendSeconds <= 0) return undefined;
+    const timer = window.setTimeout(() => setResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendSeconds]);
+
   const update = (field, value) => {
     if (field === "sap_id") {
       setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 8), otp: "" });
       setOtpSent(false);
+      setResendSeconds(0);
       return;
     }
     if (field === "otp") {
@@ -29,6 +37,7 @@ export default function EmployeeLogin() {
     if (field === "email" || field === "access_type") {
       setForm({ ...form, [field]: value, otp: "" });
       setOtpSent(false);
+      setResendSeconds(0);
       return;
     }
     setForm({ ...form, [field]: value });
@@ -41,16 +50,25 @@ export default function EmployeeLogin() {
       return;
     }
 
+    if (resendSeconds > 0) {
+      showToast(`Please wait ${resendSeconds} seconds before requesting another OTP.`, "error");
+      return;
+    }
+
     try {
       setLoading(true);
-      await axios.post(`${API_BASE_URL}/api/employee/request-otp`, {
+      const res = await axios.post(`${API_BASE_URL}/api/employee/request-otp`, {
         sap_id: form.sap_id,
         email: form.email,
         access_type: form.access_type,
       });
       setOtpSent(true);
+      setResendSeconds(Number(res.data?.retry_after || 60));
       showToast("OTP sent to registered email.");
     } catch (err) {
+      if (err.response?.status === 429 && err.response?.data?.retry_after) {
+        setResendSeconds(Number(err.response.data.retry_after));
+      }
       showToast(err.response?.data?.message || "OTP could not be sent.", "error");
     } finally {
       setLoading(false);
@@ -124,8 +142,8 @@ export default function EmployeeLogin() {
               {loading ? "Please wait..." : otpSent ? "Verify & Sign In" : "Send OTP"}
             </button>
             {otpSent && (
-              <button className="btn btn-muted" disabled={loading} type="button" onClick={requestOtp}>
-                Resend OTP
+              <button className="btn btn-muted" disabled={loading || resendSeconds > 0} type="button" onClick={requestOtp}>
+                {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend OTP"}
               </button>
             )}
           </div>
