@@ -2,7 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const db = require("../config/db");
-const { createCombinedPdf } = require("./pdfBuilder");
+const { createCombinedPdf, detectFileKind } = require("./pdfBuilder");
 
 const MAX_SUPPORTING_DOCUMENTS = 3;
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
@@ -14,6 +14,21 @@ const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 const maxSizeFor = (mimeType) => (mimeType === "application/pdf" ? MAX_PDF_SIZE : MAX_IMAGE_SIZE);
 const fileSizeMessage = "PDF must be 3 MB or less. JPG/PNG images must be 1 MB or less.";
+
+const expectedKindFor = (mimeType) => {
+  if (mimeType === "application/pdf") return "pdf";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "image/jpeg") return "jpg";
+  return "unsupported";
+};
+
+const validateFileContent = (file) => {
+  const expectedKind = expectedKindFor(file.mimetype);
+  const actualKind = detectFileKind(file.buffer);
+  if (actualKind !== expectedKind) {
+    throw new Error("File content does not match its type. Please upload a valid PDF, JPG, or PNG file.");
+  }
+};
 
 const timestampForFileName = () => {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -41,6 +56,7 @@ const markFileCurrentTime = (absolutePath) => {
 const localFileRecord = (file, prefix) => {
   if (!allowedTypes.has(file.mimetype)) throw new Error("Only PDF, JPG, and PNG files are allowed.");
   if (file.size > maxSizeFor(file.mimetype)) throw new Error(fileSizeMessage);
+  validateFileContent(file);
 
   fs.mkdirSync(uploadDir, { recursive: true });
   const ext = path.extname(file.originalname).toLowerCase() || ".bin";
