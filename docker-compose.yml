@@ -6,6 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: ${DB_NAME:-tour_report_management}
+      TZ: Asia/Kolkata
+    command: --default-time-zone=+05:30
     ports:
       - "3307:3306"
     volumes:
@@ -28,6 +30,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: development
+      TZ: Asia/Kolkata
       PORT: 5001
       DB_HOST: mysql
       DB_PORT: 3306
