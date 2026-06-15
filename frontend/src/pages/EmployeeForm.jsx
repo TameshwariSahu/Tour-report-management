@@ -417,10 +417,10 @@ export default function EmployeeForm() {
           <div>
             <div className="brand-heading">
               <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
-              <h1>Tour Program Details</h1>
+              <h1>{isDepartmentAccess ? "Department Tour Form" : "Tour Program Details"}</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>
-              {employee ? (isDepartmentAccess ? `Department form | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Employee form"}
+              {employee ? (isDepartmentAccess ? `Department Login | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Employee form"}
             </p>
           </div>
           <div className="actions">
