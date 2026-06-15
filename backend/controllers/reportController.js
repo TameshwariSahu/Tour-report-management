@@ -294,6 +294,10 @@ exports.updateStatus = (req, res) => {
       if (err) return res.status(500).json({ message: "Status update failed." });
       if (result.affectedRows === 0) return res.status(400).json({ message: "Only pending reports can be updated." });
 
+      if (status === "Approved") {
+        queueCombinedReportPdf(id);
+      }
+
       sendStatusEmail(id, status);
       res.json({ message: `Report ${status.toLowerCase()} successfully.` });
     }
