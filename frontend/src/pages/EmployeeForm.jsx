@@ -8,6 +8,7 @@ const officialTravelModes = ["Bus", "Train", "Flight", "Hired Vehicle", "Hired V
 const medicalTravelModes = ["Bus", "Hired Vehicle", "Other"];
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const MAX_PDF_SIZE = 2 * 1024 * 1024;
+const REPORTS_PAGE_SIZE = 5;
 const fileLimitMessage = "PDF must be 2 MB or less. JPG/PNG images must be 1 MB or less.";
 const alphabeticSpaceRegex = /^[A-Za-z ]+$/;
 const alphanumericSpaceRegex = /^[A-Za-z0-9 ]+$/;
@@ -107,6 +108,7 @@ export default function EmployeeForm() {
   const [supportingDocs, setSupportingDocs] = useState([]);
   const [masters, setMasters] = useState({ grades: [], departments: [], destinations: [] });
   const [loading, setLoading] = useState(false);
+  const [reportsPage, setReportsPage] = useState(1);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
 
@@ -119,6 +121,9 @@ export default function EmployeeForm() {
   const isEscortDuty = form.tour_type === "Medical (Escort Duty)";
   const isMedicalTour = isMedicalSelf || isEscortDuty;
   const isDepartmentAccess = employee?.access_type === "department";
+  const reportsTotalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PAGE_SIZE));
+  const reportsPageStart = (reportsPage - 1) * REPORTS_PAGE_SIZE;
+  const visibleReports = reports.slice(reportsPageStart, reportsPageStart + REPORTS_PAGE_SIZE);
 
   const latestEditable = useMemo(
     () => reports.find((report) => ["Draft", "Rejected"].includes(report.status)),
@@ -271,6 +276,14 @@ export default function EmployeeForm() {
       fillFromReport(latestEditable);
     }
   }, [latestEditable, activeReport, isDepartmentAccess]);
+
+  useEffect(() => {
+    setReportsPage((page) => Math.min(page, Math.max(1, Math.ceil(reports.length / REPORTS_PAGE_SIZE))));
+  }, [reports.length]);
+
+  const goToReportsPage = (page) => {
+    setReportsPage(Math.min(Math.max(page, 1), reportsTotalPages));
+  };
 
   const validateBeforeSubmit = () => {
     if (isDepartmentAccess && !/^\d{8}$/.test(form.sap_id)) {
@@ -810,14 +823,30 @@ export default function EmployeeForm() {
           {reports.length === 0 ? (
             <p style={{ color: "#64748b" }}>No reports yet.</p>
           ) : (
-            <div className="mini-list">
-              {reports.map((report) => (
-                <button className="mini-item" key={report.id} type="button" onClick={() => fillFromReport(report)}>
-                  <span>{report.destination || "Draft report"}</span>
-                  <span className={`badge ${report.status}`}>{report.status}</span>
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="mini-list">
+                {visibleReports.map((report) => (
+                  <button className="mini-item" key={report.id} type="button" onClick={() => fillFromReport(report)}>
+                    <span>{report.destination || "Draft report"}</span>
+                    <span className={`badge ${report.status}`}>{report.status}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pagination-bar">
+                <span>
+                  Showing {reportsPageStart + 1}-{Math.min(reportsPageStart + REPORTS_PAGE_SIZE, reports.length)} of {reports.length}
+                </span>
+                <div className="pagination-actions">
+                  <button className="btn btn-muted" type="button" onClick={() => goToReportsPage(reportsPage - 1)} disabled={reportsPage === 1}>
+                    Previous
+                  </button>
+                  <span>Page {reportsPage} of {reportsTotalPages}</span>
+                  <button className="btn btn-muted" type="button" onClick={() => goToReportsPage(reportsPage + 1)} disabled={reportsPage === reportsTotalPages}>
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
