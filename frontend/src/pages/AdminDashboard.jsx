@@ -55,6 +55,11 @@ const employeeExcelColumns = [
   { group: "Employee Details", label: "Department", value: (report) => report.department, width: 110 },
 ];
 
+const reportDateExcelColumns = [
+  { group: "Report Dates", label: "Created At", value: (report) => excelDate(report.created_at), width: 110 },
+  { group: "Report Dates", label: "Modified At", value: (report) => excelDate(report.updated_at), width: 110 },
+];
+
 const approvalExcelColumns = [
   { group: "Approval Details", label: "Approving Authority", value: (report) => report.approving_authority || "-", width: 170 },
   { group: "Approval Details", label: "Status", value: (report) => report.status, width: 100 },
@@ -63,6 +68,7 @@ const approvalExcelColumns = [
 
 const officialExcelColumns = [
   ...employeeExcelColumns,
+  ...reportDateExcelColumns,
   { group: "Official Tour Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Official Tour Details", label: "Purpose of Official Tour", value: (report) => report.purpose || "-", width: 190 },
   { group: "Official Tour Details", label: "Start Date", value: (report) => excelDate(report.start_date), width: 110 },
@@ -78,6 +84,7 @@ const officialExcelColumns = [
 
 const selfMedicalExcelColumns = [
   ...employeeExcelColumns,
+  ...reportDateExcelColumns,
   { group: "Self Medical Tour Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Self Medical Tour Details", label: "Referred Hospital Name", value: (report) => report.referred_hospital_name || "-", width: 190 },
   { group: "Self Medical Tour Details", label: "Reference Letter No.", value: (report) => report.medical_reference_no || "-", width: 140 },
@@ -98,6 +105,7 @@ const selfMedicalExcelColumns = [
 
 const escortDutyExcelColumns = [
   ...employeeExcelColumns,
+  ...reportDateExcelColumns,
   { group: "Escort Duty Details", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Escort Duty Details", label: "Name of Patient", value: (report) => report.patient_name || "-", width: 150 },
   { group: "Escort Duty Details", label: "Relation With Patient", value: (report) => report.patient_relation || "-", width: 150 },
@@ -120,6 +128,7 @@ const escortDutyExcelColumns = [
 
 const mixedExcelColumns = [
   ...employeeExcelColumns,
+  ...reportDateExcelColumns,
   { group: "Report Summary", label: "Submitted Date", value: (report) => excelDate(reportDate(report)), width: 110 },
   { group: "Report Summary", label: "Type of Tour", value: (report) => report.tour_type, width: 140 },
   { group: "Report Summary", label: "Main Purpose / Hospital", value: (report) => report.purpose || report.referred_hospital_name || "-", width: 220 },
@@ -312,7 +321,7 @@ export default function AdminDashboard() {
         <div className="topbar">
           <div>
             <div className="brand-heading">
-              <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
+              <img className="brand-logo" src="/nmdc.png" alt="NMDC" />
               <h1>Admin Dashboard</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review tour program reports</p>

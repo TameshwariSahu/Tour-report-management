@@ -63,7 +63,7 @@ export default function AdminLogin() {
       <div className="form-shell">
         <div className="header">
           <div className="brand-heading">
-            <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
+            <img className="brand-logo" src="/nmdc.png" alt="NMDC" />
             <h1>User Login</h1>
           </div>
           <p>Sign in with your User ID and password.</p>

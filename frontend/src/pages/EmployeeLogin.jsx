@@ -109,7 +109,7 @@ export default function EmployeeLogin() {
       <div className="form-shell">
         <div className="header">
           <div className="brand-heading">
-            <img className="brand-logo" src="/logo.svg" alt="Tour Report Management" />
+            <img className="brand-logo" src="/nmdc.png" alt="NMDC" />
             <h1>Employee Login</h1>
           </div>
           <p>Enter registered SAP ID and email to continue your tour report.</p>

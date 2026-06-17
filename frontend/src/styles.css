@@ -156,6 +156,16 @@ textarea:focus {
   color: #4338ca;
 }
 
+.btn-reports {
+  background: #172033;
+  color: #ffffff;
+  border: 1px solid #172033;
+}
+
+.btn-reports:hover {
+  background: #24324a;
+}
+
 .btn-danger {
   background: #ef4444;
   color: #ffffff;
@@ -212,9 +222,10 @@ textarea:focus {
 }
 
 .brand-logo {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 62px;
+  height: 54px;
+  flex: 0 0 62px;
+  object-fit: contain;
 }
 
 .brand-heading h1 {
@@ -396,6 +407,105 @@ th {
   border-color: #5b4ce6;
 }
 
+.report-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-filter-bar button {
+  border: 1px solid #c7d2fe;
+  border-radius: 7px;
+  background: #eef2ff;
+  color: #4338ca;
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.report-filter-bar button.active {
+  background: #5b4ce6;
+  border-color: #5b4ce6;
+  color: #ffffff;
+}
+
+.report-list {
+  display: grid;
+  gap: 14px;
+}
+
+.report-card {
+  margin-bottom: 0;
+}
+
+.report-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.report-card-header h2 {
+  color: #172033;
+  font-size: 18px;
+  margin: 0 0 5px;
+}
+
+.report-card-header p,
+.report-rejection {
+  color: #64748b;
+  margin: 0;
+  font-size: 13px;
+}
+
+.report-rejection {
+  color: #991b1b;
+  margin-bottom: 12px;
+}
+
+.report-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.report-detail {
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #f8fafc;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.report-detail span {
+  color: #64748b;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.report-detail strong {
+  color: #172033;
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.report-documents {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.report-documents h3 {
+  color: #334155;
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
 .pagination-bar {
   display: flex;
   justify-content: space-between;
@@ -415,6 +525,7 @@ th {
 @media (max-width: 760px) {
   .grid,
   .grid-3,
+  .report-detail-grid,
   .filters {
     grid-template-columns: 1fr;
   }
