@@ -515,19 +515,19 @@ export default function EmployeeForm() {
             <div className="grid">
               <div>
                 <label>SAP ID</label>
-                <input className={isDepartmentAccess ? "" : "db-field"} value={isDepartmentAccess ? form.sap_id || "" : employee?.sap_id || ""} onChange={(e) => update("sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} required={isDepartmentAccess} disabled={!isDepartmentAccess} />
+                <input className={isDepartmentAccess ? "" : "db-field"} value={isDepartmentAccess ? form.sap_id || "" : employee?.sap_id || ""} onChange={(e) => update("sap_id", e.target.value.replace(/\D/g, "").slice(0, 8))} required={isDepartmentAccess} disabled={locked || !isDepartmentAccess} />
               </div>
               <div>
                 <label>Name *</label>
-                <input className={isDepartmentAccess ? "" : "db-field"} value={form.name} onChange={(e) => update("name", e.target.value)} pattern="[A-Za-z ]+" title="Only alphabets and spaces are allowed." required disabled={!isDepartmentAccess} />
+                <input className={isDepartmentAccess ? "" : "db-field"} value={form.name} onChange={(e) => update("name", e.target.value)} pattern="[A-Za-z ]+" title="Only alphabets and spaces are allowed." required disabled={locked || !isDepartmentAccess} />
               </div>
               <div>
                 <label>Designation *</label>
-                <input className={isDepartmentAccess ? "" : "db-field"} value={form.designation} onChange={(e) => update("designation", e.target.value)} required disabled={!isDepartmentAccess} />
+                <input className={isDepartmentAccess ? "" : "db-field"} value={form.designation} onChange={(e) => update("designation", e.target.value)} required disabled={locked || !isDepartmentAccess} />
               </div>
               <div>
                 <label>Grade *</label>
-                <select className={isDepartmentAccess ? "" : "db-field"} value={form.grade} onChange={(e) => update("grade", e.target.value)} required disabled={!isDepartmentAccess}>
+                <select className={isDepartmentAccess ? "" : "db-field"} value={form.grade} onChange={(e) => update("grade", e.target.value)} required disabled={locked || !isDepartmentAccess}>
                   <option value="">Choose</option>
                   {masters.grades.map((grade) => (
                     <option key={grade.id} value={grade.grade_name}>{grade.grade_name}</option>
