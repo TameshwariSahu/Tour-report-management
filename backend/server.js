@@ -7,11 +7,13 @@ require("./config/db");
 dotenv.config();
 
 const app = express();
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5174,http://127.0.0.1:5174")
-  .split(",")
+const allowedOrigins = process.env.FRONTEND_URL.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const localOrigins = new Set(["http://localhost:5174", "http://127.0.0.1:5174"]);
+const localOrigins = new Set([
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+]);
 const allowedVercelPreviewSuffix = "-tameshwarisahus-projects.vercel.app";
 
 const isAllowedOrigin = (origin) => {
@@ -20,21 +22,25 @@ const isAllowedOrigin = (origin) => {
 
   try {
     const { hostname, protocol } = new URL(origin);
-    return protocol === "https:" && hostname.endsWith(allowedVercelPreviewSuffix);
+    return (
+      protocol === "https:" && hostname.endsWith(allowedVercelPreviewSuffix)
+    );
   } catch (_) {
     return false;
   }
 };
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 
 app.use(express.json({ limit: "55mb" }));
 
@@ -57,11 +63,11 @@ const server = app.listen(PORT, () => {
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`Port ${PORT} is already in use. Stop the old backend process or change PORT in .env.`);
+    console.error(
+      `Port ${PORT} is already in use. Stop the old backend process or change PORT in .env.`,
+    );
     return;
   }
 
   console.error("Server failed to start:", err.message);
 });
-
-
