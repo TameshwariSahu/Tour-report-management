@@ -29,7 +29,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: tour-report-backend
+    container_name: tour-tracker-backend
     restart: unless-stopped
     depends_on:
       mysql:
