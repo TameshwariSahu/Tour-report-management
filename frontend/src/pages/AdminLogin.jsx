@@ -26,23 +26,26 @@ export default function AdminLogin() {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/api/admin/login`, {
+      const res = await axios.post(`${API_BASE_URL}/admin/login`, {
         user_id: userId,
         password,
       });
 
       if (res.data.user.role === "department") {
         localStorage.setItem("tour_employee_token", res.data.token);
-        localStorage.setItem("tour_employee", JSON.stringify({
-          id: null,
-          user_id: res.data.user.user_id,
-          name: "",
-          email: "",
-          designation: "",
-          grade: "",
-          department: res.data.user.department,
-          access_type: "department",
-        }));
+        localStorage.setItem(
+          "tour_employee",
+          JSON.stringify({
+            id: null,
+            user_id: res.data.user.user_id,
+            name: "",
+            email: "",
+            designation: "",
+            grade: "",
+            department: res.data.user.department,
+            access_type: "department",
+          }),
+        );
         navigate("/form");
         return;
       }
@@ -59,7 +62,10 @@ export default function AdminLogin() {
 
   return (
     <main className="page">
-      <Toast toast={toast} onClose={() => setToast({ message: "", type: toast.type })} />
+      <Toast
+        toast={toast}
+        onClose={() => setToast({ message: "", type: toast.type })}
+      />
       <div className="form-shell">
         <div className="header">
           <div className="brand-heading">
@@ -68,8 +74,18 @@ export default function AdminLogin() {
           </div>
           <p>Sign in with your User ID and password.</p>
           <div className="login-switch" aria-label="Login type">
-            <button type="button" onClick={() => navigate("/")}><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
-            <button className="active" type="button"><span className="ui-icon" aria-hidden="true">U</span> User</button>
+            <button type="button" onClick={() => navigate("/")}>
+              <span className="ui-icon" aria-hidden="true">
+                E
+              </span>{" "}
+              Employee
+            </button>
+            <button className="active" type="button">
+              <span className="ui-icon" aria-hidden="true">
+                U
+              </span>{" "}
+              User
+            </button>
           </div>
         </div>
 
@@ -79,7 +95,11 @@ export default function AdminLogin() {
               <label>User ID *</label>
               <input
                 value={userId}
-                onChange={(e) => setUserId(e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20))}
+                onChange={(e) =>
+                  setUserId(
+                    e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20),
+                  )
+                }
                 placeholder="User ID"
                 autoComplete="username"
                 required
@@ -87,11 +107,21 @@ export default function AdminLogin() {
             </div>
             <div>
               <label>Password *</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
             </div>
           </div>
           <div className="actions" style={{ marginTop: 18 }}>
-            <button className="btn btn-primary" disabled={loading} type="submit">
+            <button
+              className="btn btn-primary"
+              disabled={loading}
+              type="submit"
+            >
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </div>
@@ -100,8 +130,3 @@ export default function AdminLogin() {
     </main>
   );
 }
-
-
-
-
-

@@ -5,7 +5,12 @@ import { API_BASE_URL } from "../api";
 import Toast from "../components/Toast";
 
 export default function EmployeeLogin() {
-  const [form, setForm] = useState({ sap_id: "", email: "", otp: "", access_type: "employee" });
+  const [form, setForm] = useState({
+    sap_id: "",
+    email: "",
+    otp: "",
+    access_type: "employee",
+  });
   const [otpSent, setOtpSent] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -19,13 +24,20 @@ export default function EmployeeLogin() {
 
   useEffect(() => {
     if (resendSeconds <= 0) return undefined;
-    const timer = window.setTimeout(() => setResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    const timer = window.setTimeout(
+      () => setResendSeconds((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
     return () => window.clearTimeout(timer);
   }, [resendSeconds]);
 
   const update = (field, value) => {
     if (field === "sap_id") {
-      setForm({ ...form, [field]: value.replace(/\D/g, "").slice(0, 8), otp: "" });
+      setForm({
+        ...form,
+        [field]: value.replace(/\D/g, "").slice(0, 8),
+        otp: "",
+      });
       setOtpSent(false);
       setResendSeconds(0);
       return;
@@ -51,13 +63,16 @@ export default function EmployeeLogin() {
     }
 
     if (resendSeconds > 0) {
-      showToast(`Please wait ${resendSeconds} seconds before requesting another OTP.`, "error");
+      showToast(
+        `Please wait ${resendSeconds} seconds before requesting another OTP.`,
+        "error",
+      );
       return;
     }
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/api/employee/request-otp`, {
+      const res = await axios.post(`${API_BASE_URL}/employee/request-otp`, {
         sap_id: form.sap_id,
         email: form.email,
         access_type: form.access_type,
@@ -69,7 +84,10 @@ export default function EmployeeLogin() {
       if (err.response?.status === 429 && err.response?.data?.retry_after) {
         setResendSeconds(Number(err.response.data.retry_after));
       }
-      showToast(err.response?.data?.message || "OTP could not be sent.", "error");
+      showToast(
+        err.response?.data?.message || "OTP could not be sent.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,7 +101,7 @@ export default function EmployeeLogin() {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/api/employee/verify-otp`, form);
+      const res = await axios.post(`${API_BASE_URL}/employee/verify-otp`, form);
       localStorage.setItem("tour_employee_token", res.data.token);
       localStorage.setItem("tour_employee", JSON.stringify(res.data.employee));
       navigate("/form");
@@ -105,7 +123,10 @@ export default function EmployeeLogin() {
 
   return (
     <main className="page">
-      <Toast toast={toast} onClose={() => setToast({ message: "", type: toast.type })} />
+      <Toast
+        toast={toast}
+        onClose={() => setToast({ message: "", type: toast.type })}
+      />
       <div className="form-shell">
         <div className="header">
           <div className="brand-heading">
@@ -114,8 +135,22 @@ export default function EmployeeLogin() {
           </div>
           <p>Enter registered SAP ID and email to continue your tour report.</p>
           <div className="login-switch" aria-label="Login type">
-            <button className={form.access_type === "employee" ? "active" : ""} type="button" onClick={() => update("access_type", "employee")}><span className="ui-icon" aria-hidden="true">E</span> Employee</button>
-            <button type="button" onClick={() => navigate("/admin")}><span className="ui-icon" aria-hidden="true">U</span> User</button>
+            <button
+              className={form.access_type === "employee" ? "active" : ""}
+              type="button"
+              onClick={() => update("access_type", "employee")}
+            >
+              <span className="ui-icon" aria-hidden="true">
+                E
+              </span>{" "}
+              Employee
+            </button>
+            <button type="button" onClick={() => navigate("/admin")}>
+              <span className="ui-icon" aria-hidden="true">
+                U
+              </span>{" "}
+              User
+            </button>
           </div>
         </div>
 
@@ -123,27 +158,61 @@ export default function EmployeeLogin() {
           <div className="grid">
             <div>
               <label>SAP ID *</label>
-              <input value={form.sap_id} onChange={(e) => update("sap_id", e.target.value)} autoComplete="username" required placeholder="8-digit SAP ID" />
+              <input
+                value={form.sap_id}
+                onChange={(e) => update("sap_id", e.target.value)}
+                autoComplete="username"
+                required
+                placeholder="8-digit SAP ID"
+              />
             </div>
             <div>
               <label>Email *</label>
-              <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required placeholder="registered email" />
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => update("email", e.target.value)}
+                autoComplete="email"
+                required
+                placeholder="registered email"
+              />
             </div>
             {otpSent && (
               <div>
                 <label>OTP *</label>
-                <input value={form.otp} onChange={(e) => update("otp", e.target.value)} autoComplete="one-time-code" required placeholder="6-digit OTP" />
+                <input
+                  value={form.otp}
+                  onChange={(e) => update("otp", e.target.value)}
+                  autoComplete="one-time-code"
+                  required
+                  placeholder="6-digit OTP"
+                />
               </div>
             )}
           </div>
 
           <div className="actions" style={{ marginTop: 16 }}>
-            <button className="btn btn-primary" disabled={loading} type="submit">
-              {loading ? "Please wait..." : otpSent ? "Verify & Sign In" : "Send OTP"}
+            <button
+              className="btn btn-primary"
+              disabled={loading}
+              type="submit"
+            >
+              {loading
+                ? "Please wait..."
+                : otpSent
+                  ? "Verify & Sign In"
+                  : "Send OTP"}
             </button>
             {otpSent && (
-              <button className="btn btn-muted" disabled={loading || resendSeconds > 0} type="button" onClick={requestOtp}>
-                {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend OTP"}
+              <button
+                className="btn btn-muted"
+                disabled={loading || resendSeconds > 0}
+                type="button"
+                onClick={requestOtp}
+              >
+                {resendSeconds > 0
+                  ? `Resend in ${resendSeconds}s`
+                  : "Resend OTP"}
               </button>
             )}
           </div>
