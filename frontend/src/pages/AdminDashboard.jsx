@@ -414,6 +414,9 @@ export default function AdminDashboard() {
 
   const changeEmployeeStatus = async (employee) => {
     const nextStatus = employee.status === "active" ? "inactive" : "active";
+    const confirmed = window.confirm(`Are you sure you want to mark ${employee.name} as ${nextStatus}?`);
+    if (!confirmed) return;
+
     try {
       await axios.patch(
         `${API_BASE_URL}/api/admin/employees/${employee.id}/status`,
@@ -462,6 +465,9 @@ export default function AdminDashboard() {
 
   const changeDepartmentStatus = async (department) => {
     const nextStatus = department.status === "active" ? "inactive" : "active";
+    const confirmed = window.confirm(`Are you sure you want to mark ${department.department_name} as ${nextStatus}?`);
+    if (!confirmed) return;
+
     try {
       await axios.patch(
         `${API_BASE_URL}/api/admin/departments/${department.id}/status`,
@@ -514,6 +520,9 @@ export default function AdminDashboard() {
 
   const changeDepartmentUserStatus = async (user) => {
     const nextStatus = user.status === "active" ? "inactive" : "active";
+    const confirmed = window.confirm(`Are you sure you want to mark ${user.user_id} as ${nextStatus}?`);
+    if (!confirmed) return;
+
     try {
       await axios.patch(
         `${API_BASE_URL}/api/admin/department-users/${user.id}/status`,
