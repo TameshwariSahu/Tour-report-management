@@ -1,44 +1,50 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: tour-report-mysql
+    container_name: tour-details-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME:-tour_report_management}
+      MYSQL_DATABASE: ${DB_NAME:-tour_details}
       TZ: Asia/Kolkata
     command: --default-time-zone=+05:30
-    ports:
-      - "3307:3306"
+    expose:
+      - "3306"
     volumes:
-      - tour_report_mysql_data:/var/lib/mysql
+      - /data/mysql/tour-details:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/docker_seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - tour-details-network
 
   backend:
     build:
       context: ./backend
-    container_name: tour-report-backend
+    container_name: tour-details-backend
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       TZ: Asia/Kolkata
       PORT: 5001
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      DB_NAME: ${DB_NAME:-tour_report_management}
+      DB_NAME: ${DB_NAME:-tour_details}
       JWT_SECRET: ${JWT_SECRET:-change_this_local_secret}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5174,http://127.0.0.1:5174}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-smtp}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -46,23 +52,34 @@ services:
       SMTP_USER: ${SMTP_USER:-yourgmail@gmail.com}
       SMTP_PASS: ${SMTP_PASS:-your_gmail_app_password}
       SMTP_FROM: ${SMTP_FROM:-Tour Report Management <yourgmail@gmail.com>}
-    ports:
-      - "5001:5001"
+    expose:
+      - "5001"
     volumes:
-      - tour_report_uploads:/app/uploads
+      - /data/uploads/tour-details:/app/uploads
+    networks:
+      - proxy-network
+      - tour-details-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
       context: ./frontend
-    container_name: tour-report-frontend
+      args:
+        VITE_API_URL: /api
+    container_name: tour-details-frontend
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: http://localhost:5001
-    ports:
-      - "5174:5174"
+    expose:
+      - "80"
+    networks:
+      - proxy-network
 
-volumes:
-  tour_report_mysql_data:
-  tour_report_uploads:
+networks:
+  proxy-network:
+    external: true
+  tour-details-network:

@@ -249,7 +249,7 @@ export default function EmployeeForm() {
   };
 
   const loadReports = async () => {
-    const res = await axios.get(`${API_BASE_URL}/api/reports/employee`, {
+    const res = await axios.get(`${API_BASE_URL}/reports/employee`, {
       headers: employeeAuthHeaders(),
     });
     setReports(res.data);
@@ -271,8 +271,8 @@ export default function EmployeeForm() {
     const loadInitialData = async () => {
       try {
         const [masterRes, reportRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/masters`),
-          axios.get(`${API_BASE_URL}/api/reports/employee`, { headers: employeeAuthHeaders() }),
+          axios.get(`${API_BASE_URL}/masters`),
+          axios.get(`${API_BASE_URL}/reports/employee`, { headers: employeeAuthHeaders() }),
         ]);
         setMasters(masterRes.data);
         setReports(reportRes.data);
@@ -426,7 +426,7 @@ export default function EmployeeForm() {
     try {
       setLoading(true);
       const body = payload();
-      const url = activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/draft` : `${API_BASE_URL}/api/reports/draft`;
+      const url = activeReport ? `${API_BASE_URL}/reports/${activeReport.id}/draft` : `${API_BASE_URL}/reports/draft`;
       const method = activeReport ? "put" : "post";
       await axios[method](url, body, { headers: employeeAuthHeaders() });
       showToast("Draft saved successfully.");
@@ -447,7 +447,7 @@ export default function EmployeeForm() {
     try {
       setLoading(true);
       const body = payload();
-      const url = activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/submit` : `${API_BASE_URL}/api/reports/submit`;
+      const url = activeReport ? `${API_BASE_URL}/reports/${activeReport.id}/submit` : `${API_BASE_URL}/reports/submit`;
       const method = activeReport ? "put" : "post";
       await axios[method](url, body, { headers: employeeAuthHeaders() });
       showToast("Tour report submitted successfully.");

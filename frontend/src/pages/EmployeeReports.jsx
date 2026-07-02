@@ -26,9 +26,14 @@ const formatDate = (value) => {
 const valueOrDash = (value) => value || "-";
 
 const reportTitle = (report) => {
-  if (report.tour_type === "Official") return report.purpose || report.destination || "Official tour";
-  if (report.tour_type === "Medical(Self)") return report.referred_hospital_name || "Self medical tour";
-  if (report.tour_type === "Medical (Escort Duty)") return report.patient_name || report.referred_hospital_name || "Escort duty";
+  if (report.tour_type === "Official")
+    return report.purpose || report.destination || "Official tour";
+  if (report.tour_type === "Medical(Self)")
+    return report.referred_hospital_name || "Self medical tour";
+  if (report.tour_type === "Medical (Escort Duty)")
+    return (
+      report.patient_name || report.referred_hospital_name || "Escort duty"
+    );
   return report.destination || report.tour_type || "Report";
 };
 
@@ -84,7 +89,7 @@ export default function EmployeeReports() {
     const loadReports = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/reports/employee`, {
+        const res = await axios.get(`${API_BASE_URL}/reports/employee`, {
           headers: employeeAuthHeaders(),
         });
         setReports(res.data);
@@ -93,7 +98,10 @@ export default function EmployeeReports() {
           logout();
           return;
         }
-        showToast(err.response?.data?.message || "Reports could not be loaded.", "error");
+        showToast(
+          err.response?.data?.message || "Reports could not be loaded.",
+          "error",
+        );
       } finally {
         setLoading(false);
       }
@@ -104,27 +112,39 @@ export default function EmployeeReports() {
   }, []);
 
   const sortedReports = useMemo(
-    () => [...reports].sort((a, b) => {
-      const priorityDiff = (reportStatusPriority[a.status] ?? 99) - (reportStatusPriority[b.status] ?? 99);
-      if (priorityDiff !== 0) return priorityDiff;
-      return Number(b.id || 0) - Number(a.id || 0);
-    }),
-    [reports]
+    () =>
+      [...reports].sort((a, b) => {
+        const priorityDiff =
+          (reportStatusPriority[a.status] ?? 99) -
+          (reportStatusPriority[b.status] ?? 99);
+        if (priorityDiff !== 0) return priorityDiff;
+        return Number(b.id || 0) - Number(a.id || 0);
+      }),
+    [reports],
   );
 
   const approvedReports = useMemo(
     () => sortedReports.filter((report) => report.status === "Approved"),
-    [sortedReports]
+    [sortedReports],
   );
 
   const filteredReports = useMemo(
-    () => approvedReports.filter((report) => activeFilter === "all" || report.tour_type === activeFilter),
-    [activeFilter, approvedReports]
+    () =>
+      approvedReports.filter(
+        (report) => activeFilter === "all" || report.tour_type === activeFilter,
+      ),
+    [activeFilter, approvedReports],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredReports.length / REPORTS_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredReports.length / REPORTS_PAGE_SIZE),
+  );
   const pageStart = (reportsPage - 1) * REPORTS_PAGE_SIZE;
-  const visibleReports = filteredReports.slice(pageStart, pageStart + REPORTS_PAGE_SIZE);
+  const visibleReports = filteredReports.slice(
+    pageStart,
+    pageStart + REPORTS_PAGE_SIZE,
+  );
 
   useEffect(() => {
     setReportsPage(1);
@@ -140,7 +160,10 @@ export default function EmployeeReports() {
 
   return (
     <main className="page">
-      <Toast toast={toast} onClose={() => setToast({ message: "", type: toast.type })} />
+      <Toast
+        toast={toast}
+        onClose={() => setToast({ message: "", type: toast.type })}
+      />
       <div className="shell">
         <div className="topbar">
           <div>
@@ -149,12 +172,29 @@ export default function EmployeeReports() {
               <h1>Approved Reports</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>
-              {employee ? (isDepartmentAccess ? `Department Login | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Report list"}
+              {employee
+                ? isDepartmentAccess
+                  ? `Department Login | User ID ${employee.user_id}`
+                  : `${employee.name} | SAP ${employee.sap_id}`
+                : "Report list"}
             </p>
           </div>
           <div className="actions">
-            <button className="btn btn-muted" type="button" onClick={() => navigate("/form")}>Back to Form</button>
-            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
+            <button
+              className="btn btn-muted"
+              type="button"
+              onClick={() => navigate("/form")}
+            >
+              Back to Form
+            </button>
+            <button className="btn btn-danger" type="button" onClick={logout}>
+              <span className="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" />
+                </svg>
+              </span>{" "}
+              Logout
+            </button>
           </div>
         </div>
 
@@ -190,9 +230,13 @@ export default function EmployeeReports() {
                     <div className="report-card-header">
                       <div>
                         <h2>{reportTitle(report)}</h2>
-                        <p>{formatDate(report.created_at)} | Report #{report.id}</p>
+                        <p>
+                          {formatDate(report.created_at)} | Report #{report.id}
+                        </p>
                       </div>
-                      <span className={`badge ${report.status}`}>{report.status}</span>
+                      <span className={`badge ${report.status}`}>
+                        {report.status}
+                      </span>
                     </div>
                     <DetailGrid fields={reportFields(report)} />
                   </article>
@@ -202,14 +246,31 @@ export default function EmployeeReports() {
 
             <div className="pagination-bar">
               <span>
-                Showing {pageStart + 1}-{Math.min(pageStart + REPORTS_PAGE_SIZE, filteredReports.length)} of {filteredReports.length}
+                Showing {pageStart + 1}-
+                {Math.min(
+                  pageStart + REPORTS_PAGE_SIZE,
+                  filteredReports.length,
+                )}{" "}
+                of {filteredReports.length}
               </span>
               <div className="pagination-actions">
-                <button className="btn btn-muted" type="button" onClick={() => goToReportsPage(reportsPage - 1)} disabled={reportsPage === 1}>
+                <button
+                  className="btn btn-muted"
+                  type="button"
+                  onClick={() => goToReportsPage(reportsPage - 1)}
+                  disabled={reportsPage === 1}
+                >
                   Previous
                 </button>
-                <span>Page {reportsPage} of {totalPages}</span>
-                <button className="btn btn-muted" type="button" onClick={() => goToReportsPage(reportsPage + 1)} disabled={reportsPage === totalPages}>
+                <span>
+                  Page {reportsPage} of {totalPages}
+                </span>
+                <button
+                  className="btn btn-muted"
+                  type="button"
+                  onClick={() => goToReportsPage(reportsPage + 1)}
+                  disabled={reportsPage === totalPages}
+                >
                   Next
                 </button>
               </div>
