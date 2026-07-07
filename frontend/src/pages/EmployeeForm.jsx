@@ -882,6 +882,7 @@ export default function EmployeeForm() {
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -891,6 +892,7 @@ export default function EmployeeForm() {
                   type="password"
                   value={passwordForm.new_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  autoComplete="new-password"
                   required
                   minLength={6}
                 />
@@ -901,6 +903,7 @@ export default function EmployeeForm() {
                   type="password"
                   value={passwordForm.confirm_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                  autoComplete="new-password"
                   required
                   minLength={6}
                 />
