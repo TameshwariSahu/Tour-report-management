@@ -7,6 +7,12 @@ const { emailShell, sendMail } = require("../utils/mailer");
 const isEightDigitSap = (value) => /^\d{8}$/.test(String(value || ""));
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 const isUserId = (value) => /^[A-Za-z0-9]{4,20}$/.test(String(value || ""));
+const isPassword = (value) => String(value || "").length >= 6;
+const isPasswordHash = (value) => {
+  const stored = String(value || "");
+  return stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$");
+};
+const passwordMatches = (plain, stored) => (isPasswordHash(stored) ? bcrypt.compareSync(plain, stored) : stored === plain);
 const OTP_RESEND_COOLDOWN_SECONDS = 60;
 const OTP_WINDOW_MINUTES = 10;
 const OTP_MAX_REQUESTS_PER_WINDOW = 5;
@@ -243,6 +249,41 @@ exports.departmentLogin = (req, res) => {
         token: createDepartmentToken(department),
         employee: departmentPayload(department),
       });
+    }
+  );
+};
+
+exports.changeDepartmentPassword = (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+  const departmentLoginId = req.employee?.department_login_id;
+
+  if (req.employee?.access_type !== "department" || !departmentLoginId) {
+    return res.status(403).json({ message: "Department access required." });
+  }
+
+  if (!current_password) return res.status(400).json({ message: "Current password is required." });
+  if (!isPassword(new_password)) return res.status(400).json({ message: "New password must be at least 6 characters." });
+  if (new_password !== confirm_password) return res.status(400).json({ message: "New password and confirm password do not match." });
+
+  db.query(
+    "SELECT id, password FROM users WHERE id = ? AND role = 'department'",
+    [departmentLoginId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: "Password could not be checked." });
+      if (rows.length === 0) return res.status(404).json({ message: "Department user not found." });
+
+      if (!passwordMatches(current_password, rows[0].password)) {
+        return res.status(401).json({ message: "Current password is incorrect." });
+      }
+
+      db.query(
+        "UPDATE users SET password = ? WHERE id = ? AND role = 'department'",
+        [bcrypt.hashSync(new_password, 10), departmentLoginId],
+        (updateErr) => {
+          if (updateErr) return res.status(500).json({ message: "Password could not be changed." });
+          res.json({ message: "Password changed successfully." });
+        }
+      );
     }
   );
 };
