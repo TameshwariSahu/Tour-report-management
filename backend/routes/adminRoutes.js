@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+  changePassword,
   createDepartment,
   createDepartmentUser,
   createEmployee,
@@ -21,6 +22,7 @@ const router = express.Router();
 
 router.post("/login", login);
 router.get("/verify", verifyAdmin, verify);
+router.patch("/password", verifyAdmin, changePassword);
 router.get("/employees", verifyAdmin, listEmployees);
 router.post("/employees", verifyAdmin, createEmployee);
 router.put("/employees/:id", verifyAdmin, updateEmployee);

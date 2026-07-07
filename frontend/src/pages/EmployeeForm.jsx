@@ -61,6 +61,11 @@ const initialForm = {
   weekly_off: "",
   approving_authority: "",
 };
+const emptyPasswordForm = {
+  current_password: "",
+  new_password: "",
+  confirm_password: "",
+};
 
 const toDateInput = (value) => {
   if (!value) return "";
@@ -121,6 +126,8 @@ export default function EmployeeForm() {
   const [supportingDocs, setSupportingDocs] = useState([]);
   const [masters, setMasters] = useState({ grades: [], departments: [], destinations: [] });
   const [loading, setLoading] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
 
@@ -246,6 +253,21 @@ export default function EmployeeForm() {
     localStorage.removeItem("tour_employee_token");
     localStorage.removeItem("tour_employee");
     navigate("/");
+  };
+
+  const submitPasswordChange = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.patch(`${API_BASE_URL}/api/employee/department-password`, passwordForm, {
+        headers: employeeAuthHeaders(),
+      });
+      showToast("Password changed successfully.");
+      setPasswordForm(emptyPasswordForm);
+      setShowPasswordModal(false);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Password could not be changed.", "error");
+    }
   };
 
   const loadReports = async () => {
@@ -477,6 +499,9 @@ export default function EmployeeForm() {
           </div>
           <div className="actions">
             <button className="btn btn-reports" type="button" onClick={() => navigate("/reports")}>Reports</button>
+            {isDepartmentAccess && (
+              <button className="btn btn-muted" type="button" onClick={() => setShowPasswordModal(true)}>Change Password</button>
+            )}
             <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
           </div>
         </div>
@@ -845,6 +870,58 @@ export default function EmployeeForm() {
           )}
         </div>
       </div>
+
+      {showPasswordModal && (
+        <div className="modal-backdrop">
+          <form className="modal" onSubmit={submitPasswordChange}>
+            <h3>Change Password</h3>
+            <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
+              <div>
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label>New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.new_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirm_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+            <div className="actions" style={{ marginTop: 14 }}>
+              <button
+                className="btn btn-muted"
+                type="button"
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordForm(emptyPasswordForm);
+                }}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" type="submit">Change Password</button>
+            </div>
+          </form>
+        </div>
+      )}
     </main>
   );
 }

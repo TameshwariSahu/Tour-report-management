@@ -8,6 +8,11 @@ const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "")
 const isStatus = (value) => ["active", "inactive"].includes(String(value || ""));
 const cleanText = (value) => String(value || "").trim();
 const isPassword = (value) => String(value || "").length >= 6;
+const isPasswordHash = (value) => {
+  const stored = String(value || "");
+  return stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$");
+};
+const passwordMatches = (plain, stored) => (isPasswordHash(stored) ? bcrypt.compareSync(plain, stored) : stored === plain);
 
 const employeeFields = (body) => ({
   sap_id: cleanText(body.sap_id),
@@ -104,6 +109,28 @@ exports.login = (req, res) => {
 
 exports.verify = (req, res) => {
   res.json({ valid: true, user: req.admin });
+};
+
+exports.changePassword = (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+
+  if (!current_password) return res.status(400).json({ message: "Current password is required." });
+  if (!isPassword(new_password)) return res.status(400).json({ message: "New password must be at least 6 characters." });
+  if (new_password !== confirm_password) return res.status(400).json({ message: "New password and confirm password do not match." });
+
+  db.query("SELECT id, password FROM users WHERE id = ? AND role = 'admin'", [req.admin.id], (err, rows) => {
+    if (err) return res.status(500).json({ message: "Password could not be checked." });
+    if (rows.length === 0) return res.status(404).json({ message: "Admin user not found." });
+
+    if (!passwordMatches(current_password, rows[0].password)) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+
+    db.query("UPDATE users SET password = ? WHERE id = ? AND role = 'admin'", [bcrypt.hashSync(new_password, 10), req.admin.id], (updateErr) => {
+      if (updateErr) return res.status(500).json({ message: "Password could not be changed." });
+      res.json({ message: "Password changed successfully." });
+    });
+  });
 };
 
 exports.listEmployees = (req, res) => {

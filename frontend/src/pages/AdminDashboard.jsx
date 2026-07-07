@@ -25,6 +25,11 @@ const emptyDepartmentUserForm = {
   department_name: "",
   status: "active",
 };
+const emptyPasswordForm = {
+  current_password: "",
+  new_password: "",
+  confirm_password: "",
+};
 
 const fileUrl = (path, mode = "preview") => {
   if (/^https?:\/\//i.test(path || "")) return path;
@@ -204,9 +209,11 @@ export default function AdminDashboard() {
   const [employeeForm, setEmployeeForm] = useState(emptyEmployeeForm);
   const [departmentForm, setDepartmentForm] = useState(emptyDepartmentForm);
   const [departmentUserForm, setDepartmentUserForm] = useState(emptyDepartmentUserForm);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [editingEmployeeId, setEditingEmployeeId] = useState(null);
   const [editingDepartmentId, setEditingDepartmentId] = useState(null);
   const [editingDepartmentUserId, setEditingDepartmentUserId] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [filters, setFilters] = useState({
     year: String(currentYear),
     status: "all",
@@ -370,6 +377,19 @@ export default function AdminDashboard() {
     await updateStatus(rejectTarget.id, "Rejected", reason);
     setRejectTarget(null);
     setRejectReason("");
+  };
+
+  const submitPasswordChange = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.patch(`${API_BASE_URL}/api/admin/password`, passwordForm, { headers: authHeaders() });
+      showToast("Password changed successfully.");
+      setPasswordForm(emptyPasswordForm);
+      setShowPasswordModal(false);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Password could not be changed.", "error");
+    }
   };
 
   const saveEmployee = async (e) => {
@@ -603,6 +623,7 @@ export default function AdminDashboard() {
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review reports and manage master data</p>
           </div>
           <div className="actions">
+            <button className="btn btn-muted" onClick={() => setShowPasswordModal(true)} type="button">Change Password</button>
             <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
           </div>
         </div>
@@ -1051,6 +1072,58 @@ export default function AdminDashboard() {
             <div className="actions" style={{ marginTop: 14 }}>
               <button className="btn btn-muted" type="button" onClick={() => setRejectTarget(null)}>Cancel</button>
               <button className="btn btn-danger" type="submit">Reject Report</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="modal-backdrop">
+          <form className="modal" onSubmit={submitPasswordChange}>
+            <h3>Change Password</h3>
+            <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
+              <div>
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label>New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.new_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirm_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+            <div className="actions" style={{ marginTop: 14 }}>
+              <button
+                className="btn btn-muted"
+                type="button"
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordForm(emptyPasswordForm);
+                }}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" type="submit">Change Password</button>
             </div>
           </form>
         </div>
