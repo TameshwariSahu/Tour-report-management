@@ -407,6 +407,15 @@ th {
   border-color: #5b4ce6;
 }
 
+.mini-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.mini-item:disabled:hover {
+  border-color: #e5e7eb;
+}
+
 .report-filter-bar {
   display: flex;
   flex-wrap: wrap;

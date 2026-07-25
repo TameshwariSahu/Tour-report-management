@@ -29,6 +29,8 @@ const reportDisplayTitle = (report) => {
   return `${report.sap_id || "-"} - ${report.destination || "-"} - ${formatDate(report.start_date)}`;
 };
 
+const canLoadReport = (report) => ["Draft", "Rejected"].includes(report.status);
+
 const initialForm = {
   sap_id: "",
   name: "",
@@ -1130,7 +1132,13 @@ export default function EmployeeForm() {
           ) : (
             <div className="mini-list">
               {openReports.map((report) => (
-                <button className="mini-item" key={report.id} type="button" onClick={() => fillFromReport(report)}>
+                <button
+                  className="mini-item"
+                  key={report.id}
+                  type="button"
+                  onClick={() => canLoadReport(report) && fillFromReport(report)}
+                  disabled={isAdminFill && !canLoadReport(report)}
+                >
                   <span>{reportDisplayTitle(report)}</span>
                   <span className={`badge ${report.status}`}>{report.status}</span>
                 </button>
@@ -1138,6 +1146,56 @@ export default function EmployeeForm() {
             </div>
           )}
         </div>
+
+        {isAdminFill && (
+          <div className="card" style={{ marginTop: 14 }}>
+            <h3 style={{ marginTop: 0 }}>Report History</h3>
+            {sortedReports.length === 0 ? (
+              <p style={{ color: "#64748b" }}>No reports found for the selected target.</p>
+            ) : (
+              <div className="table-wrap">
+                <table className="compact-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Employee</th>
+                      <th>Tour</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedReports.map((report) => (
+                      <tr key={report.id}>
+                        <td>{formatDate(report.created_at)}</td>
+                        <td>
+                          <strong>{report.name || "-"}</strong><br />
+                          SAP: {report.sap_id || "-"}<br />
+                          Dept: {report.department || "-"}
+                        </td>
+                        <td>
+                          {report.tour_type || "-"}<br />
+                          {report.destination || report.purpose || report.referred_hospital_name || "-"}<br />
+                          {formatDate(report.start_date)} to {formatDate(report.end_date)}
+                        </td>
+                        <td><span className={`badge ${report.status}`}>{report.status}</span></td>
+                        <td>
+                          {canLoadReport(report) ? (
+                            <button className="btn btn-muted" type="button" onClick={() => fillFromReport(report)}>
+                              Load
+                            </button>
+                          ) : (
+                            <span style={{ color: "#64748b" }}>Read only</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showPasswordModal && (
