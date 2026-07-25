@@ -224,6 +224,9 @@ export default function AdminDashboard() {
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [departmentLoading, setDepartmentLoading] = useState(false);
   const [departmentUserLoading, setDepartmentUserLoading] = useState(false);
+  const [departmentReportLoading, setDepartmentReportLoading] = useState(false);
+  const [selectedReportDepartment, setSelectedReportDepartment] = useState("");
+  const [departmentReports, setDepartmentReports] = useState([]);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -340,6 +343,34 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadDepartmentReports = async (departmentName = selectedReportDepartment) => {
+    if (!departmentName) {
+      setDepartmentReports([]);
+      return;
+    }
+
+    try {
+      setDepartmentReportLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/reports/admin-target`, {
+        headers: authHeaders(),
+        params: {
+          mode: "department",
+          department: departmentName,
+        },
+      });
+      setDepartmentReports(res.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem("tour_admin_token");
+        navigate("/admin");
+        return;
+      }
+      showToast(err.response?.data?.message || "Department reports could not be loaded.", "error");
+    } finally {
+      setDepartmentReportLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!localStorage.getItem("tour_admin_token")) {
       navigate("/admin");
@@ -362,6 +393,7 @@ export default function AdminDashboard() {
       );
       showToast(`Report ${status.toLowerCase()} successfully.`);
       loadReports();
+      if (selectedReportDepartment) loadDepartmentReports(selectedReportDepartment);
     } catch (err) {
       showToast(err.response?.data?.message || "Status update failed.", "error");
     }
@@ -631,6 +663,7 @@ export default function AdminDashboard() {
 
         <div className="admin-tabs" role="tablist" aria-label="Admin dashboard sections">
           <button className={activeTab === "reports" ? "active" : ""} type="button" onClick={() => setActiveTab("reports")}>Reports</button>
+          <button className={activeTab === "departmentReports" ? "active" : ""} type="button" onClick={() => setActiveTab("departmentReports")}>Department Reports</button>
           <button className={activeTab === "employees" ? "active" : ""} type="button" onClick={() => setActiveTab("employees")}>Employees</button>
           <button className={activeTab === "departments" ? "active" : ""} type="button" onClick={() => setActiveTab("departments")}>Departments</button>
           <button className={activeTab === "departmentUsers" ? "active" : ""} type="button" onClick={() => setActiveTab("departmentUsers")}>Department Users</button>
@@ -743,6 +776,104 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {activeTab === "departmentReports" && (
+          <>
+            <div className="card">
+              <div className="section-head">
+                <div>
+                  <h2>Department Reports</h2>
+                  <p>Select a department to view reports and status.</p>
+                </div>
+                <button
+                  className="btn btn-muted"
+                  type="button"
+                  onClick={() => loadDepartmentReports()}
+                  disabled={!selectedReportDepartment || departmentReportLoading}
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="grid">
+                <div>
+                  <label>Department</label>
+                  <select
+                    value={selectedReportDepartment}
+                    onChange={(e) => {
+                      const departmentName = e.target.value;
+                      setSelectedReportDepartment(departmentName);
+                      loadDepartmentReports(departmentName);
+                    }}
+                  >
+                    <option value="">Select department</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.department_name}>{department.department_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Tour</th>
+                    <th>Travel</th>
+                    <th>Files</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departmentReportLoading ? (
+                    <tr><td colSpan="8">Loading...</td></tr>
+                  ) : !selectedReportDepartment ? (
+                    <tr><td colSpan="8">Select a department to view reports.</td></tr>
+                  ) : departmentReports.length === 0 ? (
+                    <tr><td colSpan="8">No reports found for this department.</td></tr>
+                  ) : departmentReports.map((report) => (
+                    <tr key={report.id}>
+                      <td>{formatDate(reportDate(report))}</td>
+                      <td>
+                        <strong>{report.name || "-"}</strong><br />
+                        SAP: {report.sap_id || "-"}<br />
+                        {report.designation || "-"}, {report.grade || "-"}<br />
+                        Dept: {report.department || "-"}
+                      </td>
+                      <td>
+                        <strong>{report.tour_type || "-"}</strong><br />
+                        {report.purpose || report.referred_hospital_name || "-"}<br />
+                        {medicalSummary(report).map((item) => (<span key={item}>{item}<br /></span>))}
+                        {formatDate(report.start_date)} to {formatDate(report.end_date)}<br />
+                        {report.start_place || "-"} to {report.destination || "-"}
+                      </td>
+                      <td>
+                        {report.mode_of_travel || "-"}<br />
+                        Weekly off: {report.weekly_off || "-"}<br />
+                        Authority: {report.approving_authority || "-"}
+                      </td>
+                      <td>{reportFiles(report)}</td>
+                      <td><span className={`badge ${report.status}`}>{report.status}</span></td>
+                      <td>{report.rejection_reason || "-"}</td>
+                      <td>
+                        {report.status === "Pending" ? (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <button className="btn btn-success" type="button" onClick={() => updateStatus(report.id, "Approved")}>Approve</button>
+                            <button className="btn btn-danger" type="button" onClick={() => setRejectTarget(report)}>Reject</button>
+                          </div>
+                        ) : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
