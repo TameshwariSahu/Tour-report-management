@@ -86,6 +86,7 @@ exports.login = (req, res) => {
     const token = jwt.sign(
       {
         id: user.role === "department" ? null : user.id,
+        department_login_id: user.role === "department" ? user.id : undefined,
         user_id: user.user_id,
         role: tokenRole,
         access_type: user.role === "department" ? "department" : undefined,
@@ -99,6 +100,7 @@ exports.login = (req, res) => {
       token,
       user: {
         id: user.id,
+        department_login_id: user.role === "department" ? user.id : undefined,
         user_id: user.user_id,
         role: user.role,
         department: user.department_name,

@@ -35,6 +35,7 @@ export default function AdminLogin() {
         localStorage.setItem("tour_employee_token", res.data.token);
         localStorage.setItem("tour_employee", JSON.stringify({
           id: null,
+          department_login_id: res.data.user.department_login_id,
           user_id: res.data.user.user_id,
           name: "",
           email: "",

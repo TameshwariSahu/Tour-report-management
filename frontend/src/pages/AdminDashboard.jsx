@@ -623,6 +623,7 @@ export default function AdminDashboard() {
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>Review reports and manage master data</p>
           </div>
           <div className="actions">
+            <button className="btn btn-reports" onClick={() => navigate("/admin/form")} type="button">Fill Tour Form</button>
             <button className="btn btn-muted" onClick={() => setShowPasswordModal(true)} type="button">Change Password</button>
             <button className="btn btn-danger" onClick={logout} type="button"><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
           </div>
@@ -987,6 +988,7 @@ export default function AdminDashboard() {
                     value={departmentUserForm.password}
                     onChange={(e) => setDepartmentUserForm({ ...departmentUserForm, password: e.target.value })}
                     placeholder={editingDepartmentUserId ? "Leave blank to keep same" : "Minimum 6 characters"}
+                    autoComplete="new-password"
                     required={!editingDepartmentUserId}
                   />
                 </div>
@@ -1088,6 +1090,7 @@ export default function AdminDashboard() {
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -1097,6 +1100,7 @@ export default function AdminDashboard() {
                   type="password"
                   value={passwordForm.new_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  autoComplete="new-password"
                   required
                   minLength={6}
                 />
@@ -1107,6 +1111,7 @@ export default function AdminDashboard() {
                   type="password"
                   value={passwordForm.confirm_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                  autoComplete="new-password"
                   required
                   minLength={6}
                 />
