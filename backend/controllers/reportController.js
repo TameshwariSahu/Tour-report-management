@@ -29,6 +29,16 @@ const isDepartmentAccess = (employee) => employee?.access_type === "department";
 const reportSapId = (body, employee) => (isDepartmentAccess(employee) ? body.sap_id : employee.sap_id);
 const reportDepartment = (body, employee) => body.department || employee.department || null;
 
+const adminTargetEmployee = (body) => ({
+  id: body.admin_fill_mode === "employee" && body.employee_id ? Number(body.employee_id) : null,
+  sap_id: body.sap_id,
+  name: body.name,
+  designation: body.designation,
+  grade: body.grade,
+  department: body.department,
+  access_type: body.admin_fill_mode === "department" ? "department" : "employee",
+});
+
 const reportValues = (body, employee, approvalFile, status) => [
   employee.id || null,
   reportSapId(body, employee),
@@ -233,6 +243,56 @@ exports.saveDraft = (req, res) => saveEmployeeReport(req, res, "Draft");
 
 exports.submitReport = (req, res) => saveEmployeeReport(req, res, "Pending");
 
+const saveAdminReport = (req, res, status) => {
+  if (!["employee", "department"].includes(req.body.admin_fill_mode)) {
+    return res.status(400).json({ message: "Admin fill mode is required." });
+  }
+
+  if (!/^\d{8}$/.test(String(req.body.sap_id || ""))) {
+    return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+  }
+
+  req.employee = adminTargetEmployee(req.body);
+  saveEmployeeReport(req, res, status);
+};
+
+exports.saveAdminDraft = (req, res) => saveAdminReport(req, res, "Draft");
+
+exports.submitAdminReport = (req, res) => saveAdminReport(req, res, "Pending");
+
+exports.getAdminTargetReports = (req, res) => {
+  const { mode, sap_id, department } = req.query;
+  const params = [];
+  let sql = "SELECT * FROM tour_reports WHERE 1 = 1";
+
+  if (mode === "employee") {
+    if (!/^\d{8}$/.test(String(sap_id || ""))) {
+      return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+    }
+    sql += " AND sap_id = ?";
+    params.push(sap_id);
+  } else if (mode === "department") {
+    if (!department) return res.status(400).json({ message: "Department is required." });
+    sql += " AND department = ?";
+    params.push(department);
+    if (sap_id) {
+      if (!/^\d{8}$/.test(String(sap_id || ""))) {
+        return res.status(400).json({ message: "SAP ID must be exactly 8 digits." });
+      }
+      sql += " AND sap_id = ?";
+      params.push(sap_id);
+    }
+  } else {
+    return res.status(400).json({ message: "Mode is required." });
+  }
+
+  sql += " ORDER BY created_at DESC, id DESC";
+  db.query(sql, params, (err, reports) => {
+    if (err) return res.status(500).json({ message: "Reports could not be loaded." });
+    attachSupportDocs(reports, res);
+  });
+};
+
 exports.getEmployeeReports = (req, res) => {
   const sql = isDepartmentAccess(req.employee)
     ? "SELECT * FROM tour_reports WHERE department = ? ORDER BY created_at DESC, id DESC"
@@ -380,7 +440,6 @@ exports.fileResponse = (req, res) => {
   if (req.query.mode === "download") return res.download(file.value);
   res.sendFile(file.value);
 };
-
 
 
 

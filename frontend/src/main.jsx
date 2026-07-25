@@ -19,6 +19,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/reports" element={<EmployeeReports />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/form" element={<EmployeeForm />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

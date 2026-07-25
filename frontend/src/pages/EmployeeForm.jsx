@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { API_BASE_URL, employeeAuthHeaders } from "../api";
+import { useLocation, useNavigate } from "react-router-dom";
+import { API_BASE_URL, authHeaders, employeeAuthHeaders } from "../api";
 import Toast from "../components/Toast";
 
 const officialTravelModes = ["Bus", "Train", "Flight", "Hired Vehicle", "Hired Vehicle + Flight"];
@@ -118,8 +118,22 @@ const normalizeTime = (value, period = "") => {
 };
 
 export default function EmployeeForm() {
+  const location = useLocation();
   const [form, setForm] = useState(initialForm);
   const [employee, setEmployee] = useState(null);
+  const [adminEmployees, setAdminEmployees] = useState([]);
+  const [adminMode, setAdminMode] = useState("employee");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [showQuickEmployeeForm, setShowQuickEmployeeForm] = useState(false);
+  const [quickEmployeeForm, setQuickEmployeeForm] = useState({
+    sap_id: "",
+    name: "",
+    email: "",
+    designation: "",
+    grade: "",
+    department: "",
+    status: "active",
+  });
   const [reports, setReports] = useState([]);
   const [activeReport, setActiveReport] = useState(null);
   const [approvalNote, setApprovalNote] = useState(null);
@@ -130,6 +144,7 @@ export default function EmployeeForm() {
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
+  const isAdminFill = location.pathname.startsWith("/admin/form");
 
   const locked = activeReport?.status === "Approved" || activeReport?.status === "Pending";
   const canSubmit = !activeReport || ["Draft", "Rejected"].includes(activeReport.status);
@@ -139,6 +154,7 @@ export default function EmployeeForm() {
   const isEscortDuty = form.tour_type === "Medical (Escort Duty)";
   const isMedicalTour = isMedicalSelf || isEscortDuty;
   const isDepartmentAccess = employee?.access_type === "department";
+  const reportHeaders = () => (isAdminFill ? authHeaders() : employeeAuthHeaders());
   const sortedReports = useMemo(
     () => [...reports].sort((a, b) => {
       const priorityDiff = (reportStatusPriority[a.status] ?? 99) - (reportStatusPriority[b.status] ?? 99);
@@ -177,6 +193,32 @@ export default function EmployeeForm() {
       grade: data.grade || "",
       department: data.department || "",
     }));
+  };
+
+  const selectAdminEmployee = (employeeId, employeeList = adminEmployees) => {
+    setSelectedEmployeeId(employeeId);
+    const selected = employeeList.find((item) => String(item.id) === String(employeeId));
+    if (!selected) return;
+
+    setEmployee({
+      id: selected.id,
+      sap_id: selected.sap_id,
+      name: selected.name,
+      email: selected.email,
+      designation: selected.designation,
+      grade: selected.grade,
+      department: selected.department,
+      access_type: "employee",
+    });
+    setForm((current) => ({
+      ...current,
+      sap_id: selected.sap_id,
+      name: selected.name,
+      designation: selected.designation,
+      grade: selected.grade,
+      department: selected.department,
+    }));
+    setActiveReport(null);
   };
 
   const fillFromReport = (report) => {
@@ -250,6 +292,10 @@ export default function EmployeeForm() {
   };
 
   const logout = () => {
+    if (isAdminFill) {
+      navigate("/admin/dashboard");
+      return;
+    }
     localStorage.removeItem("tour_employee_token");
     localStorage.removeItem("tour_employee");
     navigate("/");
@@ -270,15 +316,77 @@ export default function EmployeeForm() {
     }
   };
 
+  const saveQuickEmployee = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/admin/employees`, quickEmployeeForm, { headers: authHeaders() });
+      const newEmployee = res.data;
+      const updatedEmployees = [...adminEmployees, newEmployee].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      setAdminEmployees(updatedEmployees);
+      setShowQuickEmployeeForm(false);
+      setQuickEmployeeForm({
+        sap_id: "",
+        name: "",
+        email: "",
+        designation: "",
+        grade: "",
+        department: "",
+        status: "active",
+      });
+      selectAdminEmployee(String(newEmployee.id), updatedEmployees);
+      showToast("Employee added and selected.");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Employee could not be added.", "error");
+    }
+  };
+
   const loadReports = async () => {
-    const res = await axios.get(`${API_BASE_URL}/api/reports/employee`, {
-      headers: employeeAuthHeaders(),
-    });
+    const res = isAdminFill
+      ? await axios.get(`${API_BASE_URL}/api/reports/admin-target`, {
+        headers: authHeaders(),
+        params: {
+          mode: adminMode,
+          sap_id: form.sap_id.length === 8 ? form.sap_id : undefined,
+          department: form.department || undefined,
+        },
+      })
+      : await axios.get(`${API_BASE_URL}/api/reports/employee`, {
+        headers: employeeAuthHeaders(),
+      });
     setReports(res.data);
     return res.data;
   };
 
   useEffect(() => {
+    if (isAdminFill) {
+      if (!localStorage.getItem("tour_admin_token")) {
+        navigate("/admin");
+        return;
+      }
+
+      const loadAdminInitialData = async () => {
+        try {
+          const [masterRes, employeeRes] = await Promise.all([
+            axios.get(`${API_BASE_URL}/api/masters`),
+            axios.get(`${API_BASE_URL}/api/admin/employees`, { headers: authHeaders() }),
+          ]);
+          setMasters(masterRes.data);
+          setAdminEmployees(employeeRes.data);
+        } catch (err) {
+          if (err.response?.status === 401) {
+            localStorage.removeItem("tour_admin_token");
+            navigate("/admin");
+            return;
+          }
+          showToast("Initial data could not be loaded.", "error");
+        }
+      };
+
+      loadAdminInitialData();
+      return;
+    }
+
     const token = localStorage.getItem("tour_employee_token");
     const storedEmployee = localStorage.getItem("tour_employee");
     if (!token || !storedEmployee) {
@@ -309,7 +417,7 @@ export default function EmployeeForm() {
 
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdminFill, navigate]);
 
   useEffect(() => {
     if (!isDepartmentAccess && !activeReport && latestEditable) {
@@ -317,9 +425,30 @@ export default function EmployeeForm() {
     }
   }, [latestEditable, activeReport, isDepartmentAccess]);
 
+  useEffect(() => {
+    if (!isAdminFill) return;
+    const hasTarget = adminMode === "employee" ? form.sap_id : form.department;
+    if (adminMode === "department" && form.sap_id && form.sap_id.length !== 8) return;
+    if (!hasTarget) {
+      setReports([]);
+      setActiveReport(null);
+      return;
+    }
+
+    loadReports().catch((err) => {
+      showToast(err.response?.data?.message || "Reports could not be loaded.", "error");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdminFill, adminMode, form.sap_id, form.department]);
+
   const validateBeforeSubmit = () => {
-    if (isDepartmentAccess && !/^\d{8}$/.test(form.sap_id)) {
+    if ((isDepartmentAccess || isAdminFill) && !/^\d{8}$/.test(form.sap_id)) {
       showToast("SAP ID must be exactly 8 digits.", "error");
+      return false;
+    }
+
+    if (isAdminFill && adminMode === "employee" && !selectedEmployeeId) {
+      showToast("Please select an employee or add a new employee first.", "error");
       return false;
     }
 
@@ -418,6 +547,10 @@ export default function EmployeeForm() {
     delete formFields.end_period;
     Object.entries({
       ...formFields,
+      ...(isAdminFill ? {
+        admin_fill_mode: adminMode,
+        employee_id: adminMode === "employee" ? selectedEmployeeId : "",
+      } : {}),
       start_time: normalizeTime(form.start_time),
       end_time: normalizeTime(form.end_time),
     }).forEach(([key, value]) => data.append(key, value ?? ""));
@@ -432,9 +565,10 @@ export default function EmployeeForm() {
 
     setForm({
       ...initialForm,
-      name: isDepartmentAccess ? "" : employee?.name || "",
-      designation: isDepartmentAccess ? "" : employee?.designation || "",
-      grade: isDepartmentAccess ? "" : employee?.grade || "",
+      sap_id: isAdminFill && adminMode === "employee" ? employee?.sap_id || "" : "",
+      name: isDepartmentAccess || (isAdminFill && adminMode === "department") ? "" : employee?.name || "",
+      designation: isDepartmentAccess || (isAdminFill && adminMode === "department") ? "" : employee?.designation || "",
+      grade: isDepartmentAccess || (isAdminFill && adminMode === "department") ? "" : employee?.grade || "",
       department: employee?.department || "",
     });
     setApprovalNote(null);
@@ -448,9 +582,11 @@ export default function EmployeeForm() {
     try {
       setLoading(true);
       const body = payload();
-      const url = activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/draft` : `${API_BASE_URL}/api/reports/draft`;
+      const url = isAdminFill
+        ? activeReport ? `${API_BASE_URL}/api/reports/admin/${activeReport.id}/draft` : `${API_BASE_URL}/api/reports/admin/draft`
+        : activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/draft` : `${API_BASE_URL}/api/reports/draft`;
       const method = activeReport ? "put" : "post";
-      await axios[method](url, body, { headers: employeeAuthHeaders() });
+      await axios[method](url, body, { headers: reportHeaders() });
       showToast("Draft saved successfully.");
       const updatedReports = await loadReports();
       const current = updatedReports.find((report) => report.id === activeReport?.id) || updatedReports[0];
@@ -469,9 +605,11 @@ export default function EmployeeForm() {
     try {
       setLoading(true);
       const body = payload();
-      const url = activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/submit` : `${API_BASE_URL}/api/reports/submit`;
+      const url = isAdminFill
+        ? activeReport ? `${API_BASE_URL}/api/reports/admin/${activeReport.id}/submit` : `${API_BASE_URL}/api/reports/admin/submit`
+        : activeReport ? `${API_BASE_URL}/api/reports/${activeReport.id}/submit` : `${API_BASE_URL}/api/reports/submit`;
       const method = activeReport ? "put" : "post";
-      await axios[method](url, body, { headers: employeeAuthHeaders() });
+      await axios[method](url, body, { headers: reportHeaders() });
       showToast("Tour report submitted successfully.");
       const updatedReports = await loadReports();
       const current = updatedReports.find((report) => report.id === activeReport?.id) || updatedReports[0];
@@ -491,20 +629,151 @@ export default function EmployeeForm() {
           <div>
             <div className="brand-heading">
               <img className="brand-logo" src="/nmdc.png" alt="NMDC" />
-              <h1>{isDepartmentAccess ? "Department Tour Form" : "Tour Program Details"}</h1>
+              <h1>{isAdminFill ? "Admin Fill Tour Form" : isDepartmentAccess ? "Department Tour Form" : "Tour Program Details"}</h1>
             </div>
             <p style={{ margin: "5px 0 0", color: "#64748b" }}>
-              {employee ? (isDepartmentAccess ? `Department Login | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Employee form"}
+              {isAdminFill ? "Create and modify reports for employee or department mode" : employee ? (isDepartmentAccess ? `Department Login | User ID ${employee.user_id}` : `${employee.name} | SAP ${employee.sap_id}`) : "Employee form"}
             </p>
           </div>
           <div className="actions">
-            <button className="btn btn-reports" type="button" onClick={() => navigate("/reports")}>Reports</button>
+            {isAdminFill ? (
+              <button className="btn btn-reports" type="button" onClick={() => navigate("/admin/dashboard")}>Dashboard</button>
+            ) : (
+              <button className="btn btn-reports" type="button" onClick={() => navigate("/reports")}>Reports</button>
+            )}
             {isDepartmentAccess && (
               <button className="btn btn-muted" type="button" onClick={() => setShowPasswordModal(true)}>Change Password</button>
             )}
-            <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
+            {!isAdminFill && (
+              <button className="btn btn-danger" type="button" onClick={logout}><span className="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10 17v2H5V5h5v2H7v10h3Zm4.6-1.4-1.4-1.4 2.2-2.2H10v-2h5.4l-2.2-2.2 1.4-1.4L19.4 11l-4.8 4.6Z" /></svg></span> Logout</button>
+            )}
           </div>
         </div>
+
+        {isAdminFill && (
+          <div className="card">
+            <div className="report-filter-bar" aria-label="Admin form mode">
+              <button
+                className={adminMode === "employee" ? "active" : ""}
+                type="button"
+                onClick={() => {
+                  setAdminMode("employee");
+                  setSelectedEmployeeId("");
+                  setEmployee(null);
+                  setForm(initialForm);
+                  setReports([]);
+                  setActiveReport(null);
+                }}
+              >
+                Fill as Employee
+              </button>
+              <button
+                className={adminMode === "department" ? "active" : ""}
+                type="button"
+                onClick={() => {
+                  setAdminMode("department");
+                  setSelectedEmployeeId("");
+                  setEmployee({ id: null, department: "", access_type: "department" });
+                  setForm(initialForm);
+                  setReports([]);
+                  setActiveReport(null);
+                }}
+              >
+                Fill as Department
+              </button>
+            </div>
+
+            {adminMode === "employee" ? (
+              <>
+                <div className="grid" style={{ marginTop: 14 }}>
+                  <div>
+                    <label>Select Employee</label>
+                    <select value={selectedEmployeeId} onChange={(e) => selectAdminEmployee(e.target.value)}>
+                      <option value="">Choose employee</option>
+                      {adminEmployees.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.sap_id} - {item.name} - {item.department}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ alignSelf: "end" }}>
+                    <button className="btn btn-muted" type="button" onClick={() => setShowQuickEmployeeForm((value) => !value)}>
+                      {showQuickEmployeeForm ? "Hide Add Employee" : "Add New Employee"}
+                    </button>
+                  </div>
+                </div>
+
+                {showQuickEmployeeForm && (
+                  <form className="form-subsection" style={{ marginTop: 16 }} onSubmit={saveQuickEmployee}>
+                    <h3>Add New Employee</h3>
+                    <div className="grid-3">
+                      <div>
+                        <label>SAP ID</label>
+                        <input value={quickEmployeeForm.sap_id} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, sap_id: e.target.value.replace(/\D/g, "").slice(0, 8) })} required />
+                      </div>
+                      <div>
+                        <label>Name</label>
+                        <input value={quickEmployeeForm.name} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, name: onlyAlphabeticSpaces(e.target.value) })} required />
+                      </div>
+                      <div>
+                        <label>Email</label>
+                        <input type="email" value={quickEmployeeForm.email} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, email: e.target.value })} required />
+                      </div>
+                      <div>
+                        <label>Designation</label>
+                        <input value={quickEmployeeForm.designation} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, designation: e.target.value })} required />
+                      </div>
+                      <div>
+                        <label>Grade</label>
+                        <select value={quickEmployeeForm.grade} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, grade: e.target.value })} required>
+                          <option value="">Choose</option>
+                          {masters.grades.map((grade) => (
+                            <option key={grade.id} value={grade.grade_name}>{grade.grade_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Department</label>
+                        <select value={quickEmployeeForm.department} onChange={(e) => setQuickEmployeeForm({ ...quickEmployeeForm, department: e.target.value })} required>
+                          <option value="">Choose</option>
+                          {masters.departments.map((department) => (
+                            <option key={department.id} value={department.department_name}>{department.department_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="actions form-actions">
+                      <button className="btn btn-primary" type="submit">Save Employee</button>
+                    </div>
+                  </form>
+                )}
+              </>
+            ) : (
+              <div className="grid" style={{ marginTop: 14 }}>
+                <div>
+                  <label>Select Department</label>
+                  <select
+                    value={form.department}
+                    onChange={(e) => {
+                      const department = e.target.value;
+                      setEmployee({ id: null, department, access_type: "department" });
+                      setForm({ ...initialForm, department });
+                      setReports([]);
+                      setActiveReport(null);
+                    }}
+                    required
+                  >
+                    <option value="">Choose department</option>
+                    {masters.departments.map((department) => (
+                      <option key={department.id} value={department.department_name}>{department.department_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeReport && (
           <div className="card">
