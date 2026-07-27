@@ -9,7 +9,7 @@ services:
       TZ: Asia/Kolkata
     command: --default-time-zone=+05:30
     ports:
-      - "3307:3306"
+      - "${MYSQL_HOST_PORT:-3308}:3306"
     volumes:
       - tour_report_mysql_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro

@@ -22,6 +22,7 @@ const emptyDepartmentForm = {
 const emptyDepartmentUserForm = {
   user_id: "",
   password: "",
+  role: "department",
   department_name: "",
   status: "active",
 };
@@ -224,15 +225,22 @@ export default function AdminDashboard() {
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [departmentLoading, setDepartmentLoading] = useState(false);
   const [departmentUserLoading, setDepartmentUserLoading] = useState(false);
+  const [departmentReportLoading, setDepartmentReportLoading] = useState(false);
+  const [selectedReportDepartment, setSelectedReportDepartment] = useState("");
+  const [departmentReports, setDepartmentReports] = useState([]);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [departmentReportPage, setDepartmentReportPage] = useState(1);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const navigate = useNavigate();
 
   const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE));
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const visibleReports = reports.slice(pageStart, pageStart + PAGE_SIZE);
+  const departmentReportTotalPages = Math.max(1, Math.ceil(departmentReports.length / PAGE_SIZE));
+  const departmentReportPageStart = (departmentReportPage - 1) * PAGE_SIZE;
+  const visibleDepartmentReports = departmentReports.slice(departmentReportPageStart, departmentReportPageStart + PAGE_SIZE);
   const departmentOptions = masterData.departments.some((department) => department.department_name === employeeForm.department)
     ? masterData.departments
     : [
@@ -326,7 +334,7 @@ export default function AdminDashboard() {
   const loadDepartmentUsers = async () => {
     try {
       setDepartmentUserLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/api/admin/department-users`, { headers: authHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/users`, { headers: authHeaders() });
       setDepartmentUsers(res.data);
     } catch (err) {
       if (err.response?.status === 401) {
@@ -334,9 +342,39 @@ export default function AdminDashboard() {
         navigate("/admin");
         return;
       }
-      showToast(err.response?.data?.message || "Department users could not be loaded.", "error");
+      showToast(err.response?.data?.message || "Users could not be loaded.", "error");
     } finally {
       setDepartmentUserLoading(false);
+    }
+  };
+
+  const loadDepartmentReports = async (departmentName = selectedReportDepartment) => {
+    if (!departmentName) {
+      setDepartmentReports([]);
+      setDepartmentReportPage(1);
+      return;
+    }
+
+    try {
+      setDepartmentReportLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/reports/admin-target`, {
+        headers: authHeaders(),
+        params: {
+          mode: "department",
+          department: departmentName,
+        },
+      });
+      setDepartmentReports(res.data);
+      setDepartmentReportPage(1);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem("tour_admin_token");
+        navigate("/admin");
+        return;
+      }
+      showToast(err.response?.data?.message || "Department reports could not be loaded.", "error");
+    } finally {
+      setDepartmentReportLoading(false);
     }
   };
 
@@ -362,6 +400,7 @@ export default function AdminDashboard() {
       );
       showToast(`Report ${status.toLowerCase()} successfully.`);
       loadReports();
+      if (selectedReportDepartment) loadDepartmentReports(selectedReportDepartment);
     } catch (err) {
       showToast(err.response?.data?.message || "Status update failed.", "error");
     }
@@ -508,22 +547,23 @@ export default function AdminDashboard() {
       ...departmentUserForm,
       user_id: departmentUserForm.user_id.trim(),
       password: departmentUserForm.password,
-      department_name: departmentUserForm.department_name.trim(),
+      role: departmentUserForm.role,
+      department_name: departmentUserForm.role === "department" ? departmentUserForm.department_name.trim() : "",
     };
 
     try {
       if (editingDepartmentUserId) {
-        await axios.put(`${API_BASE_URL}/api/admin/department-users/${editingDepartmentUserId}`, payload, { headers: authHeaders() });
-        showToast("Department user updated successfully.");
+        await axios.put(`${API_BASE_URL}/api/admin/users/${editingDepartmentUserId}`, payload, { headers: authHeaders() });
+        showToast("User updated successfully.");
       } else {
-        await axios.post(`${API_BASE_URL}/api/admin/department-users`, payload, { headers: authHeaders() });
-        showToast("Department user added successfully.");
+        await axios.post(`${API_BASE_URL}/api/admin/users`, payload, { headers: authHeaders() });
+        showToast(`${payload.role === "admin" ? "Admin" : "Department"} user added successfully.`);
       }
       setDepartmentUserForm(emptyDepartmentUserForm);
       setEditingDepartmentUserId(null);
       loadDepartmentUsers();
     } catch (err) {
-      showToast(err.response?.data?.message || "Department user could not be saved.", "error");
+      showToast(err.response?.data?.message || "User could not be saved.", "error");
     }
   };
 
@@ -531,6 +571,7 @@ export default function AdminDashboard() {
     setDepartmentUserForm({
       user_id: user.user_id || "",
       password: "",
+      role: user.role || "department",
       department_name: user.department_name || "",
       status: user.status || "active",
     });
@@ -545,14 +586,14 @@ export default function AdminDashboard() {
 
     try {
       await axios.patch(
-        `${API_BASE_URL}/api/admin/department-users/${user.id}/status`,
+        `${API_BASE_URL}/api/admin/users/${user.id}/status`,
         { status: nextStatus },
         { headers: authHeaders() }
       );
-      showToast(`Department user marked ${nextStatus}.`);
+      showToast(`User marked ${nextStatus}.`);
       loadDepartmentUsers();
     } catch (err) {
-      showToast(err.response?.data?.message || "Department user status could not be changed.", "error");
+      showToast(err.response?.data?.message || "User status could not be changed.", "error");
     }
   };
 
@@ -564,6 +605,10 @@ export default function AdminDashboard() {
 
   const goToPage = (page) => {
     setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  };
+
+  const goToDepartmentReportPage = (page) => {
+    setDepartmentReportPage(Math.min(Math.max(page, 1), departmentReportTotalPages));
   };
   const downloadExcel = () => {
     if (reports.length === 0) {
@@ -631,9 +676,10 @@ export default function AdminDashboard() {
 
         <div className="admin-tabs" role="tablist" aria-label="Admin dashboard sections">
           <button className={activeTab === "reports" ? "active" : ""} type="button" onClick={() => setActiveTab("reports")}>Reports</button>
+          <button className={activeTab === "departmentReports" ? "active" : ""} type="button" onClick={() => setActiveTab("departmentReports")}>Department Reports</button>
           <button className={activeTab === "employees" ? "active" : ""} type="button" onClick={() => setActiveTab("employees")}>Employees</button>
           <button className={activeTab === "departments" ? "active" : ""} type="button" onClick={() => setActiveTab("departments")}>Departments</button>
-          <button className={activeTab === "departmentUsers" ? "active" : ""} type="button" onClick={() => setActiveTab("departmentUsers")}>Department Users</button>
+          <button className={activeTab === "departmentUsers" ? "active" : ""} type="button" onClick={() => setActiveTab("departmentUsers")}>Users</button>
         </div>
 
         {activeTab === "reports" && (
@@ -743,6 +789,121 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {activeTab === "departmentReports" && (
+          <>
+            <div className="card">
+              <div className="section-head">
+                <div>
+                  <h2>Department Reports</h2>
+                  <p>Select a department to view reports and status.</p>
+                </div>
+                <button
+                  className="btn btn-muted"
+                  type="button"
+                  onClick={() => loadDepartmentReports()}
+                  disabled={!selectedReportDepartment || departmentReportLoading}
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="grid">
+                <div>
+                  <label>Department</label>
+                  <select
+                    value={selectedReportDepartment}
+                    onChange={(e) => {
+                      const departmentName = e.target.value;
+                      setSelectedReportDepartment(departmentName);
+                      loadDepartmentReports(departmentName);
+                    }}
+                  >
+                    <option value="">Select department</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.department_name}>{department.department_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Tour</th>
+                    <th>Travel</th>
+                    <th>Files</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departmentReportLoading ? (
+                    <tr><td colSpan="8">Loading...</td></tr>
+                  ) : !selectedReportDepartment ? (
+                    <tr><td colSpan="8">Select a department to view reports.</td></tr>
+                  ) : departmentReports.length === 0 ? (
+                    <tr><td colSpan="8">No reports found for this department.</td></tr>
+                  ) : visibleDepartmentReports.map((report) => (
+                    <tr key={report.id}>
+                      <td>{formatDate(reportDate(report))}</td>
+                      <td>
+                        <strong>{report.name || "-"}</strong><br />
+                        SAP: {report.sap_id || "-"}<br />
+                        {report.designation || "-"}, {report.grade || "-"}<br />
+                        Dept: {report.department || "-"}
+                      </td>
+                      <td>
+                        <strong>{report.tour_type || "-"}</strong><br />
+                        {report.purpose || report.referred_hospital_name || "-"}<br />
+                        {medicalSummary(report).map((item) => (<span key={item}>{item}<br /></span>))}
+                        {formatDate(report.start_date)} to {formatDate(report.end_date)}<br />
+                        {report.start_place || "-"} to {report.destination || "-"}
+                      </td>
+                      <td>
+                        {report.mode_of_travel || "-"}<br />
+                        Weekly off: {report.weekly_off || "-"}<br />
+                        Authority: {report.approving_authority || "-"}
+                      </td>
+                      <td>{reportFiles(report)}</td>
+                      <td><span className={`badge ${report.status}`}>{report.status}</span></td>
+                      <td>{report.rejection_reason || "-"}</td>
+                      <td>
+                        {report.status === "Pending" ? (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <button className="btn btn-success" type="button" onClick={() => updateStatus(report.id, "Approved")}>Approve</button>
+                            <button className="btn btn-danger" type="button" onClick={() => setRejectTarget(report)}>Reject</button>
+                          </div>
+                        ) : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {!departmentReportLoading && departmentReports.length > 0 && (
+              <div className="pagination-bar">
+                <span>
+                  Showing {departmentReportPageStart + 1}-{Math.min(departmentReportPageStart + PAGE_SIZE, departmentReports.length)} of {departmentReports.length}
+                </span>
+                <div className="pagination-actions">
+                  <button className="btn btn-muted" type="button" onClick={() => goToDepartmentReportPage(departmentReportPage - 1)} disabled={departmentReportPage === 1}>
+                    Previous
+                  </button>
+                  <span>Page {departmentReportPage} of {departmentReportTotalPages}</span>
+                  <button className="btn btn-muted" type="button" onClick={() => goToDepartmentReportPage(departmentReportPage + 1)} disabled={departmentReportPage === departmentReportTotalPages}>
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -955,8 +1116,8 @@ export default function AdminDashboard() {
             <form className="card" onSubmit={saveDepartmentUser}>
               <div className="section-head">
                 <div>
-                  <h2>{editingDepartmentUserId ? "Edit Department User" : "Add New Department User"}</h2>
-                  <p>Create and manage department login accounts.</p>
+                  <h2>{editingDepartmentUserId ? "Edit User" : "Create User"}</h2>
+                  <p>Create admin users or department login accounts.</p>
                 </div>
                 {editingDepartmentUserId && (
                   <button
@@ -973,11 +1134,25 @@ export default function AdminDashboard() {
               </div>
               <div className="grid-3">
                 <div>
+                  <label>User Type</label>
+                  <select
+                    value={departmentUserForm.role}
+                    onChange={(e) => setDepartmentUserForm({
+                      ...departmentUserForm,
+                      role: e.target.value,
+                      department_name: e.target.value === "admin" ? "" : departmentUserForm.department_name,
+                    })}
+                  >
+                    <option value="department">Department User</option>
+                    <option value="admin">Admin User</option>
+                  </select>
+                </div>
+                <div>
                   <label>User ID</label>
                   <input
                     value={departmentUserForm.user_id}
                     onChange={(e) => setDepartmentUserForm({ ...departmentUserForm, user_id: e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 20).toUpperCase() })}
-                    placeholder="DEPTCIT01"
+                    placeholder={departmentUserForm.role === "admin" ? "ADMIN02" : "DEPTCIT01"}
                     required
                   />
                 </div>
@@ -992,19 +1167,21 @@ export default function AdminDashboard() {
                     required={!editingDepartmentUserId}
                   />
                 </div>
-                <div>
-                  <label>Department</label>
-                  <select
-                    value={departmentUserForm.department_name}
-                    onChange={(e) => setDepartmentUserForm({ ...departmentUserForm, department_name: e.target.value })}
-                    required
-                  >
-                    <option value="">Select department</option>
-                    {departmentUserOptions.map((department) => (
-                      <option key={department.id} value={department.department_name}>{department.department_name}</option>
-                    ))}
-                  </select>
-                </div>
+                {departmentUserForm.role === "department" && (
+                  <div>
+                    <label>Department</label>
+                    <select
+                      value={departmentUserForm.department_name}
+                      onChange={(e) => setDepartmentUserForm({ ...departmentUserForm, department_name: e.target.value })}
+                      required
+                    >
+                      <option value="">Select department</option>
+                      {departmentUserOptions.map((department) => (
+                        <option key={department.id} value={department.department_name}>{department.department_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label>Status</label>
                   <select value={departmentUserForm.status} onChange={(e) => setDepartmentUserForm({ ...departmentUserForm, status: e.target.value })}>
@@ -1014,7 +1191,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="actions form-actions">
-                <button className="btn btn-primary" type="submit">{editingDepartmentUserId ? "Update Department User" : "Add Department User"}</button>
+                <button className="btn btn-primary" type="submit">{editingDepartmentUserId ? "Update User" : "Create User"}</button>
               </div>
             </form>
 
@@ -1023,6 +1200,7 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>User ID</th>
+                    <th>Type</th>
                     <th>Department</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -1030,13 +1208,14 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {departmentUserLoading ? (
-                    <tr><td colSpan="4">Loading...</td></tr>
+                    <tr><td colSpan="5">Loading...</td></tr>
                   ) : departmentUsers.length === 0 ? (
-                    <tr><td colSpan="4">No department users found.</td></tr>
+                    <tr><td colSpan="5">No users found.</td></tr>
                   ) : departmentUsers.map((user) => (
                     <tr key={user.id}>
                       <td><strong>{user.user_id}</strong></td>
-                      <td>{user.department_name}</td>
+                      <td>{user.role === "admin" ? "Admin User" : "Department User"}</td>
+                      <td>{user.department_name || "-"}</td>
                       <td><span className={`status-pill ${user.status}`}>{user.status}</span></td>
                       <td>
                         <div className="row-actions">
