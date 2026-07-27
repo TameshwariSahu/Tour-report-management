@@ -4,9 +4,11 @@ const {
   createDepartment,
   createDepartmentUser,
   createEmployee,
+  createUser,
   listDepartments,
   listDepartmentUsers,
   listEmployees,
+  listUsers,
   login,
   updateDepartment,
   updateDepartmentStatus,
@@ -14,6 +16,8 @@ const {
   updateDepartmentUserStatus,
   updateEmployee,
   updateEmployeeStatus,
+  updateUser,
+  updateUserStatus,
   verify,
 } = require("../controllers/adminController");
 const { verifyAdmin } = require("../middleware/auth");
@@ -31,6 +35,10 @@ router.get("/departments", verifyAdmin, listDepartments);
 router.post("/departments", verifyAdmin, createDepartment);
 router.put("/departments/:id", verifyAdmin, updateDepartment);
 router.patch("/departments/:id/status", verifyAdmin, updateDepartmentStatus);
+router.get("/users", verifyAdmin, listUsers);
+router.post("/users", verifyAdmin, createUser);
+router.put("/users/:id", verifyAdmin, updateUser);
+router.patch("/users/:id/status", verifyAdmin, updateUserStatus);
 router.get("/department-users", verifyAdmin, listDepartmentUsers);
 router.post("/department-users", verifyAdmin, createDepartmentUser);
 router.put("/department-users/:id", verifyAdmin, updateDepartmentUser);

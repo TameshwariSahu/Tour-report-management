@@ -51,11 +51,32 @@ const departmentUserFields = (body) => ({
   status: cleanText(body.status || "active").toLowerCase(),
 });
 
+const userFields = (body) => {
+  const role = cleanText(body.role || "department").toLowerCase();
+  return {
+    user_id: cleanText(body.user_id).toUpperCase(),
+    password: String(body.password || ""),
+    role,
+    department_name: role === "department" ? cleanText(body.department_name) : "",
+    status: cleanText(body.status || "active").toLowerCase(),
+  };
+};
+
 const validateDepartmentUser = (user, requirePassword) => {
   if (!isUserId(user.user_id)) return "User ID must be 4-20 letters/numbers.";
   if (requirePassword && !isPassword(user.password)) return "Password must be at least 6 characters.";
   if (user.password && !isPassword(user.password)) return "Password must be at least 6 characters.";
   if (!user.department_name) return "Department is required.";
+  if (!isStatus(user.status)) return "Status must be active or inactive.";
+  return "";
+};
+
+const validateUser = (user, requirePassword) => {
+  if (!["admin", "department"].includes(user.role)) return "User type must be admin or department.";
+  if (!isUserId(user.user_id)) return "User ID must be 4-20 letters/numbers.";
+  if (requirePassword && !isPassword(user.password)) return "Password must be at least 6 characters.";
+  if (user.password && !isPassword(user.password)) return "Password must be at least 6 characters.";
+  if (user.role === "department" && !user.department_name) return "Department is required.";
   if (!isStatus(user.status)) return "Status must be active or inactive.";
   return "";
 };
@@ -257,6 +278,86 @@ exports.listDepartmentUsers = (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ message: "Department users could not be loaded." });
       res.json(rows);
+    }
+  );
+};
+
+exports.listUsers = (req, res) => {
+  db.query(
+    `SELECT id, user_id, role, department_name, status, created_at
+     FROM users
+     WHERE role IN ('admin', 'department')
+     ORDER BY role ASC, department_name ASC, user_id ASC`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: "Users could not be loaded." });
+      res.json(rows);
+    }
+  );
+};
+
+exports.createUser = (req, res) => {
+  const user = userFields(req.body);
+  const validationError = validateUser(user, true);
+  if (validationError) return res.status(400).json({ message: validationError });
+
+  const passwordHash = bcrypt.hashSync(user.password, 10);
+  db.query(
+    `INSERT INTO users (user_id, password, role, department_name, status)
+     VALUES (?, ?, ?, ?, ?)`,
+    [user.user_id, passwordHash, user.role, user.department_name, user.status],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: duplicateMessage(err, "User could not be created.") });
+      res.status(201).json({
+        id: result.insertId,
+        user_id: user.user_id,
+        role: user.role,
+        department_name: user.department_name,
+        status: user.status,
+      });
+    }
+  );
+};
+
+exports.updateUser = (req, res) => {
+  const user = userFields(req.body);
+  const validationError = validateUser(user, false);
+  if (validationError) return res.status(400).json({ message: validationError });
+
+  const values = [user.user_id, user.role, user.department_name, user.status];
+  let query = "UPDATE users SET user_id = ?, role = ?, department_name = ?, status = ?";
+
+  if (user.password) {
+    query += ", password = ?";
+    values.push(bcrypt.hashSync(user.password, 10));
+  }
+
+  query += " WHERE id = ? AND role IN ('admin', 'department')";
+  values.push(req.params.id);
+
+  db.query(query, values, (err, result) => {
+    if (err) return res.status(500).json({ message: duplicateMessage(err, "User could not be updated.") });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "User not found." });
+    res.json({
+      id: Number(req.params.id),
+      user_id: user.user_id,
+      role: user.role,
+      department_name: user.department_name,
+      status: user.status,
+    });
+  });
+};
+
+exports.updateUserStatus = (req, res) => {
+  const status = cleanText(req.body.status).toLowerCase();
+  if (!isStatus(status)) return res.status(400).json({ message: "Status must be active or inactive." });
+
+  db.query(
+    "UPDATE users SET status = ? WHERE id = ? AND role IN ('admin', 'department')",
+    [status, req.params.id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: "User status could not be updated." });
+      if (result.affectedRows === 0) return res.status(404).json({ message: "User not found." });
+      res.json({ id: Number(req.params.id), status });
     }
   );
 };
